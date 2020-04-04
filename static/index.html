@@ -11,6 +11,8 @@ Welcome to the articulate game room: <a href='/join'>Join</a>
 <script>
   var socket = io(document.location.origin);
   var feed_div = document.getElementById("feed");
+  var name_res = window.prompt("What's your name", "");
+  socket.emit('join', name_res);
   socket.on('feed', function (data) {
     console.log(data);
     var div = document.createElement('div');
