@@ -1,0 +1,21 @@
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+body{margin:40px auto;padding:0 10px;max-width:650px;
+  line-height:1.6;font-size:18px;font-family:sans-serif;color:#444}
+h1,h2,h3{line-height:1.2}</style>
+<script src="/socket.io/socket.io.js"></script>
+<h2>
+Welcome to the articulate game room: <a href='/join'>Join</a>
+</h2>
+<div id="feed"></div>
+<script>
+  var socket = io(document.location.origin);
+  var feed_div = document.getElementById("feed");
+  socket.on('feed', function (data) {
+    console.log(data);
+    var div = document.createElement('div');
+    div.textContent = data.text;
+    div.setAttribute('class', 'note');
+    feed_div.appendChild(div);
+  });
+</script>

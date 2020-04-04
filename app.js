@@ -36,6 +36,7 @@ function getRandomInt(min, max) {
 
 
 var app = express.Router();
+app.use(express.static(__dirname+'/static',{index: 'index.html'})); // Sets which page to load first
 
 function sendOkStyled(res, content){
   const header = `

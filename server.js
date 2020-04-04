@@ -10,8 +10,5 @@ server.listen(config.port, () => console.log("server listening on "+config.port)
 
 express.use('/', app);
 io.on('connection', function (socket) {
-  socket.emit('news', { hello: 'world' });
-  socket.on('my other event', function (data) {
-    console.log(data);
-  });
+  io.emit('feed', { text: 'hello world' });
 });
