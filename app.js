@@ -52,18 +52,43 @@ app.get('/', async function(req, res){
   sendOkStyled(res,"Welcome to the articulate game room: " + link);
 });
 
+function User(name, socket){
+  return {name: name, conn: socket};
+}
 var users = [];
 
-function addUser(name){
-  if(users.indexOf(name)==-1){
-    users.push(name);
+function addUser(name, socket){
+  if(users.map((item) => item.name).indexOf(name)==-1){
+    users.push(new User(name, socket));
     return true;
   }
   return false;
 }
 
+function updateUser(name, socket){
+  //Check user exists
+  var idx = users.map((item) => item.name).indexOf(name);
+  if(idx==-1){
+    return false;
+  }
+  else{
+    //Check it is closed before
+    if((users[idx].socket)&&users[idx].socket.connected){
+      return false;
+    }
+    else{
+      users[idx].socket = socket;
+      return true;
+    }
+  }
+}
+
 function getUsers(){
   return users;
 }
+function getUsernames(){
+  return users.map((item) => item.name);
+}
 
-module.exports = {router: app, addUser: addUser, getUsers:getUsers}; //Based off
+module.exports = {router: app, addUser: addUser, updateUser: updateUser,
+  getUsers:getUsers, getUsernames: getUsernames, }; //Based off

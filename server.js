@@ -13,14 +13,25 @@ express.use('/', app.router);
 
 
 function currentUsersString(){
-  return "Current players are: " + app.getUsers().join(", ");
+  return "Current players are: " + app.getUsernames().join(", ");
 }
 io.on('connection', function (socket) {
   //io.emit('feed', { text: 'hello world' });
-  socket.on('join', function(data){
-    socket.emit('feed', {text: currentUsersString()})
-    if(app.addUser(data)){
-      socket.broadcast.emit('feed', { text: data + " joined the game" });
+  socket.on('join', function(name){
+    if(app.addUser(name, socket)){
+      socket.broadcast.emit('feed', { text: name + " joined the game" });
+    }
+    else if(app.updateUser(name, socket)){
+      socket.emit('feed', {text: currentUsersString()});
+    }
+    else{
+      socket.emit('feed', {text: "Could not join. User occupied"});
+    }
+  });
+  socket.on('next', function(data){
+    if(app.currentUser == socket){
+      // Allowed to ask for next
+      app.next();
     }
   })
 
