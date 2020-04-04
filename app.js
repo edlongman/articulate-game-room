@@ -52,4 +52,18 @@ app.get('/', async function(req, res){
   sendOkStyled(res,"Welcome to the articulate game room: " + link);
 });
 
-module.exports = app; //Based off
+var users = [];
+
+function addUser(name){
+  if(users.indexOf(name)==-1){
+    users.push(name);
+    return true;
+  }
+  return false;
+}
+
+function getUsers(){
+  return users;
+}
+
+module.exports = {router: app, addUser: addUser, getUsers:getUsers}; //Based off
