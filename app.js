@@ -1,5 +1,6 @@
 'use strict';
 const express = require('express');
+const multer = require('multer');
 
 function makeid(length) {
    var result           = '';
@@ -34,7 +35,22 @@ function getRandomInt(min, max) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
-
+const fileLen = 10;
+const extMap = {"image/png": 'png', "image/jpeg": 'jpeg'}
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, 'useruploads')
+  },
+  filename: function (req, file, cb) {
+    const extension = extMap[file.mimetype];
+    if(extension == null){
+      cb("Illegal upload type");
+      return;
+    }
+    cb(null, file.makeid(fileLen) + extension)
+  }
+});
+const upload = multer({ storage: storage });
 var app = express.Router();
 app.use(express.static(__dirname+'/static',{index: 'index.html'})); // Sets which page to load first
 
@@ -51,11 +67,28 @@ app.get('/', async function(req, res){
   const link = "<a href='/join'>Join</a>";
   sendOkStyled(res,"Welcome to the articulate game room: " + link);
 });
+const cardUpload = upload.array(
+  {name: 'cards',
+  maxCount:20,
+  limits:{fileSize: 1000000}});
+app.post('/cardUpload', cardUpload, function (req, res, next) {
+  // req.files is an object (String -> Array) where fieldname is the key, and the value is array of files
+  //
+  // e.g.
+  //  req.files['avatar'][0] -> File
+  //  req.files['gallery'] -> Array
+  //
+  // req.body will contain the text fields, if there were any
+})
 
 function User(name, socket){
   return {name: name, conn: socket};
 }
 var users = [];
+var current_user = '';
+var cards = [];
+var round_cards = [];
+
 
 function addUser(name, socket){
   if(users.map((item) => item.name).indexOf(name)==-1){
@@ -88,6 +121,10 @@ function getUsers(){
 }
 function getUsernames(){
   return users.map((item) => item.name);
+}
+
+function currentUser(){
+  return users[getUsernames.indexOf(current_user)];
 }
 
 module.exports = {router: app, addUser: addUser, updateUser: updateUser,

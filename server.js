@@ -29,10 +29,10 @@ io.on('connection', function (socket) {
     }
   });
   socket.on('next', function(data){
-    if(app.currentUser == socket){
+    if(app.currentUser().conn == socket){
       // Allowed to ask for next
       app.next();
     }
-  })
+  });
 
 });
