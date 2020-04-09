@@ -1,6 +1,8 @@
 'use strict';
 const express = require('express');
 const multer = require('multer');
+const fs = require('fs');
+const util = require('util');
 
 function makeid(length) {
    var result           = '';
@@ -53,6 +55,13 @@ const storage = multer.diskStorage({
 const upload = multer({ storage: storage,
   limits:{fileSize: 1000000} });
 var app = express.Router();
+const asyncUnlink = util.promisify(fs.unlink);
+async function cleanUp(){
+  //Remove all uploaded files
+  return Promise.all(
+    instance_upload_list.map( (item)=>asyncUnlink(item) )
+  );
+}
 app.use(express.static(__dirname+'/static',{index: 'index.html'})); // Sets which page to load first
 app.use('/library',
   express.static(__dirname+'/useruploads',{
@@ -81,19 +90,17 @@ function Card(src){
 Card.fromFile = function(multer_file){
   return new Card(multer_file.filename);
 }
+var instance_upload_list = [];
 var users = [];
 var current_user = '';
 var cards = [];
 var round_cards = [];
 const cardUpload = upload.array('cards', 20);
 app.post('/cardUpload', cardUpload, function (req, res, next) {
-  // req.files is an object (String -> Array) where fieldname is the key, and the value is array of files
-  //
-  // e.g.
-  //  req.files['avatar'][0] -> File
-  //  req.files['gallery'] -> Array
-  //
-  // req.body will contain the text fields, if there were any
+  // Record all uploads to empty them when finished
+  instance_upload_list = instance_upload_list.concat(
+    req.files.map((item) => item.path)
+  );
   cards = cards.concat(
     req.files.map((item) => Card.fromFile(item))
   );
@@ -144,5 +151,6 @@ function currentUser(){
   return users[getUsernames.indexOf(current_user)];
 }
 
-module.exports = {router: app, addUser: addUser, updateUser: updateUser,
+module.exports = {router: app, cleanUp: cleanUp,
+  addUser: addUser, updateUser: updateUser,
   getUsers:getUsers, getUsernames: getUsernames, }; //Based off
