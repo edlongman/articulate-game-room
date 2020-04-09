@@ -28,6 +28,9 @@ io.on('connection', function (socket) {
       socket.emit('feed', {text: "Could not join. User occupied"});
     }
   });
+  socket.on('admin', function(name){
+    socket.emit('feed', {text: "Admin feed connected"});
+  });
   socket.on('next', function(data){
     if(app.currentUser().conn == socket){
       // Allowed to ask for next

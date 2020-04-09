@@ -1,0 +1,71 @@
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+body{margin:40px auto;padding:0 10px;max-width:650px;
+  line-height:1.6;font-size:18px;font-family:sans-serif;color:#444}
+h1,h2,h3{line-height:1.2}</style>
+<script src="/socket.io/socket.io.js"></script>
+<h2>
+Articulate admin panel
+</h2>
+<form class="card-upload" action="cardUpload" method="post">
+  <label for="cards">Upload up to 20 images: </label><input type="file" name="cards" accept="image/*" multiple>
+  <input type="submit" name="submit" value="Upload">
+</form>
+<div id="feed"></div>
+<div id="cards"></div>
+<script type="text/javascript">
+  if( typeof Element.prototype.clearChildren === 'undefined' ) {
+    // Monkey fill from https://stackoverflow.com/questions/3955229/remove-all-child-elements-of-a-dom-node-in-javascript
+    Object.defineProperty(Element.prototype, 'clearChildren', {
+      configurable: true,
+      enumerable: false,
+      value: function() {
+        while(this.firstChild) this.removeChild(this.lastChild)
+      }
+    });
+  }
+</script>
+<script type="text/javascript">
+  'use strict';
+  var socket = io(document.location.origin);
+  var feed_div = document.getElementById("feed");
+  var cards_div = document.getElementById("cards");
+  socket.emit('admin', 'admin');
+  socket.on('feed', function (data) {
+    console.log(data);
+    var div = document.createElement('div');
+    div.textContent = data.text;
+    div.setAttribute('class', 'note');
+    feed_div.appendChild(div);
+  });
+  document.querySelector('form.card-upload').addEventListener('submit',
+    function sendUpload(ev){
+      ev.preventDefault();
+      var submit_data = new FormData();
+      const card_input = this.querySelector('input[type="file"]');
+      for(var i=0; i<card_input.files.length; i++){
+        submit_data.append('cards', card_input.files[i]);
+      }
+      fetch('cardUpload', {
+        method: 'POST',
+        body: submit_data
+      })
+      .then( (response)=>response.json() )
+      .then( (cards) => {
+        cards_div.clearChildren();
+        for(var i=0; i<cards.length; i++){
+          var img = document.createElement('img');
+          img.src = 'library/'+cards[i].src;
+          img.setAttribute('class', 'card');
+          cards_div.appendChild(img);
+        }
+      })
+      .catch( (err) => {
+        console.log('Error uploading cards: '+err);
+        var div = document.createElement('div');
+        div.textContent = err.message;
+        div.setAttribute('class', 'note');
+        feed_div.appendChild(div);
+      })
+    })
+</script>

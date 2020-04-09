@@ -47,12 +47,19 @@ const storage = multer.diskStorage({
       cb("Illegal upload type");
       return;
     }
-    cb(null, file.makeid(fileLen) + extension)
+    cb(null, makeid(fileLen) + '.'+ extension)
   }
 });
-const upload = multer({ storage: storage });
+const upload = multer({ storage: storage,
+  limits:{fileSize: 1000000} });
 var app = express.Router();
 app.use(express.static(__dirname+'/static',{index: 'index.html'})); // Sets which page to load first
+app.use('/library',
+  express.static(__dirname+'/useruploads',{
+    index: null,
+    maxAge: 604800,//one week - filenames are unique
+  })
+);
 
 function sendOkStyled(res, content){
   const header = `
@@ -67,10 +74,18 @@ app.get('/', async function(req, res){
   const link = "<a href='/join'>Join</a>";
   sendOkStyled(res,"Welcome to the articulate game room: " + link);
 });
-const cardUpload = upload.array(
-  {name: 'cards',
-  maxCount:20,
-  limits:{fileSize: 1000000}});
+
+function Card(src){
+  return {src: src};
+}
+Card.fromFile = function(multer_file){
+  return new Card(multer_file.filename);
+}
+var users = [];
+var current_user = '';
+var cards = [];
+var round_cards = [];
+const cardUpload = upload.array('cards', 20);
 app.post('/cardUpload', cardUpload, function (req, res, next) {
   // req.files is an object (String -> Array) where fieldname is the key, and the value is array of files
   //
@@ -79,6 +94,10 @@ app.post('/cardUpload', cardUpload, function (req, res, next) {
   //  req.files['gallery'] -> Array
   //
   // req.body will contain the text fields, if there were any
+  cards = cards.concat(
+    req.files.map((item) => Card.fromFile(item))
+  );
+  res.status(201).send(cards)
 })
 
 function User(name, socket){
@@ -86,8 +105,6 @@ function User(name, socket){
 }
 var users = [];
 var current_user = '';
-var cards = [];
-var round_cards = [];
 
 
 function addUser(name, socket){
