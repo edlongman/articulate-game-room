@@ -42,6 +42,12 @@ io.on('connection', function (socket) {
 
 });
 
+app.broadcast.on('cards', function(cardList){
+  for(var i=0;i<cardList.length;i++){
+    io.emit('feed', {text: 'New card ' + cardList[i].src});
+  }
+})
+
 // Handle ^C
 process.on('SIGINT', function shutdown(){
   server.stop();

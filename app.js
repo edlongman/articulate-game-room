@@ -2,6 +2,7 @@
 const express = require('express');
 const {makeId, shuffle, getRandomInt} = require('./gameUtil');
 const imgStore = require('./imageStore');
+const EventEmitter = require('events');
 
 var app = express.Router();
 function sendOkStyled(res, content){
@@ -21,9 +22,10 @@ app.use(express.static(__dirname+'/static',{index: 'index.html'})); // Sets whic
 app.use('/library', imgStore.library);
 app.use('/card/create', imgStore.upload20img, function addUploaded(req, res, next){
   if(req.imageUpload){
-    var cards = req.files.map((item) => Card.fromFile(item));
-    res.status(201).send(cards);
-    cards.concat(cards);
+    var new_cards = req.files.map((item) => Card.fromFile(item));
+    res.status(201).send(new_cards);
+    cards.concat(new_cards);
+    cardNotifier.emit('cards',new_cards);
   }
 });
 
@@ -34,6 +36,7 @@ function Card(src){
 Card.fromFile = function(multer_file){
   return new Card(multer_file.filename);
 }
+const cardNotifier = new EventEmitter();
 var users = [];
 var current_user = '';
 var cards = [];
@@ -89,4 +92,6 @@ async function cleanUp(){
 
 module.exports = {router: app, cleanUp: cleanUp,
   addUser: addUser, updateUser: updateUser,
-  getUsers:getUsers, getUsernames: getUsernames, }; //Based off
+  getUsers:getUsers, getUsernames: getUsernames,
+  broadcast: cardNotifier
+}; //Based off
