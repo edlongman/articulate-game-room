@@ -46,7 +46,7 @@ Articulate admin panel
       for(var i=0; i<card_input.files.length; i++){
         submit_data.append('cards', card_input.files[i]);
       }
-      fetch('cardUpload', {
+      fetch('card/create', {
         method: 'POST',
         body: submit_data
       })

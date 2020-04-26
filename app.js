@@ -1,43 +1,9 @@
 'use strict';
 const express = require('express');
-const multer = require('multer');
-const fs = require('fs');
-const util = require('util');
 const {makeId, shuffle, getRandomInt} = require('./gameUtil');
+const imgStore = require('./imageStore');
 
-const fileLen = 10;
-const extMap = {"image/png": 'png', "image/jpeg": 'jpeg'}
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, 'useruploads')
-  },
-  filename: function (req, file, cb) {
-    const extension = extMap[file.mimetype];
-    if(extension == null){
-      cb("Illegal upload type");
-      return;
-    }
-    cb(null, makeId(fileLen) + '.'+ extension)
-  }
-});
-const upload = multer({ storage: storage,
-  limits:{fileSize: 1000000} });
 var app = express.Router();
-const asyncUnlink = util.promisify(fs.unlink);
-async function cleanUp(){
-  //Remove all uploaded files
-  return Promise.all(
-    instance_upload_list.map( (item)=>asyncUnlink(item) )
-  );
-}
-app.use(express.static(__dirname+'/static',{index: 'index.html'})); // Sets which page to load first
-app.use('/library',
-  express.static(__dirname+'/useruploads',{
-    index: null,
-    maxAge: 604800,//one week - filenames are unique
-  })
-);
-
 function sendOkStyled(res, content){
   const header = `
   <meta name="viewport" content="width=device-width, initial-scale=1"><style>
@@ -51,6 +17,16 @@ app.get('/', async function(req, res){
   const link = "<a href='/join'>Join</a>";
   sendOkStyled(res,"Welcome to the articulate game room: " + link);
 });
+app.use(express.static(__dirname+'/static',{index: 'index.html'})); // Sets which page to load first
+app.use('/library', imgStore.library);
+app.use('/card/create', imgStore.upload20img, function addUploaded(req, res, next){
+  if(req.imageUpload){
+    var cards = req.files.map((item) => Card.fromFile(item));
+    res.status(201).send(cards);
+    cards.concat(cards);
+  }
+});
+
 
 function Card(src){
   return {src: src};
@@ -58,22 +34,10 @@ function Card(src){
 Card.fromFile = function(multer_file){
   return new Card(multer_file.filename);
 }
-var instance_upload_list = [];
 var users = [];
 var current_user = '';
 var cards = [];
 var round_cards = [];
-const cardUpload = upload.array('cards', 20);
-app.post('/cardUpload', cardUpload, function (req, res, next) {
-  // Record all uploads to empty them when finished
-  instance_upload_list = instance_upload_list.concat(
-    req.files.map((item) => item.path)
-  );
-  cards = cards.concat(
-    req.files.map((item) => Card.fromFile(item))
-  );
-  res.status(201).send(cards)
-})
 
 function User(name, socket){
   return {name: name, conn: socket};
@@ -117,6 +81,10 @@ function getUsernames(){
 
 function currentUser(){
   return users[getUsernames.indexOf(current_user)];
+}
+
+async function cleanUp(){
+  return Promise.all([imgStore.destroy]);
 }
 
 module.exports = {router: app, cleanUp: cleanUp,
