@@ -22,19 +22,17 @@ io.on('connection', function (socket) {
   socket.on('join', function(name){
     if(app.addUser(name, socket)){
       socket.broadcast.emit('feed', { text: name + " joined the game" });
-    }
-    else if(app.updateUser(name, socket)){
       socket.emit('feed', {text: currentUsersString()});
     }
     else{
-      socket.emit('feed', {text: "Could not join. User occupied"});
+      socket.emit('kick', {text: "Could not join. User occupied"});
     }
   });
   socket.on('admin', function(name){
     socket.emit('feed', {text: "Admin feed connected"});
   });
   socket.on('next', function(data){
-    if(app.currentUser().conn == socket){
+    if(app.currentUser()&&app.currentUser().conn == socket){
       // Allowed to ask for next
       app.next();
     }

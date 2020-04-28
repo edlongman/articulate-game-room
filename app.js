@@ -2,6 +2,7 @@
 const express = require('express');
 const {makeId, shuffle, getRandomInt} = require('./gameUtil');
 const imgStore = require('./imageStore');
+const Players = require('./players');
 const EventEmitter = require('events');
 
 var app = express.Router();
@@ -37,61 +38,16 @@ Card.fromFile = function(multer_file){
   return new Card(multer_file.filename);
 }
 const cardNotifier = new EventEmitter();
-var users = [];
-var current_user = '';
+var game_players = new Players();
 var cards = [];
 var round_cards = [];
-
-function User(name, socket){
-  return {name: name, conn: socket};
-}
-var users = [];
-var current_user = '';
-
-
-function addUser(name, socket){
-  if(users.map((item) => item.name).indexOf(name)==-1){
-    users.push(new User(name, socket));
-    return true;
-  }
-  return false;
-}
-
-function updateUser(name, socket){
-  //Check user exists
-  var idx = users.map((item) => item.name).indexOf(name);
-  if(idx==-1){
-    return false;
-  }
-  else{
-    //Check it is closed before
-    if((users[idx].socket)&&users[idx].socket.connected){
-      return false;
-    }
-    else{
-      users[idx].socket = socket;
-      return true;
-    }
-  }
-}
-
-function getUsers(){
-  return users;
-}
-function getUsernames(){
-  return users.map((item) => item.name);
-}
-
-function currentUser(){
-  return users[getUsernames.indexOf(current_user)];
-}
 
 async function cleanUp(){
   return Promise.all([imgStore.destroy]);
 }
 
 module.exports = {router: app, cleanUp: cleanUp,
-  addUser: addUser, updateUser: updateUser,
-  getUsers:getUsers, getUsernames: getUsernames,
+  addUser: game_players.add.bind(game_players), currentUser: function(){return game_players.active;},
+  getUsers:()=>game_players, getUsernames: function(){return game_players.names;},
   broadcast: cardNotifier
 }; //Based off
