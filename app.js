@@ -4,7 +4,7 @@ const {makeId, shuffle, getRandomInt} = require('./gameUtil');
 const imgStore = require('./imageStore');
 const Players = require('./players');
 const EventEmitter = require('events');
-
+const Card = require('./card')
 var app = express.Router();
 function sendOkStyled(res, content){
   const header = `
@@ -23,20 +23,13 @@ app.use(express.static(__dirname+'/static',{index: 'index.html'})); // Sets whic
 app.use('/library', imgStore.library);
 app.use('/card/create', imgStore.upload20img, function addUploaded(req, res, next){
   if(req.imageUpload){
-    var new_cards = req.files.map((item) => Card.fromFile(item));
+    var new_cards = req.files.map((item) => Card.fromFile(item).generate().value);
     res.status(201).send(new_cards);
     cards.concat(new_cards);
     cardNotifier.emit('cards',new_cards);
   }
 });
 
-
-function Card(src){
-  return {src: src};
-}
-Card.fromFile = function(multer_file){
-  return new Card(multer_file.filename);
-}
 const cardNotifier = new EventEmitter();
 var game_players = new Players();
 var cards = [];
