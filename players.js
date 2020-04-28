@@ -16,18 +16,11 @@ class Players extends Array{
     return users[idx];
   }
   add(name, socket){
-    //If user exists and is connected, kick the impersonator
+    //If user exists see if can update the socket (only if socket closed)
     const userWithName = this.byName(name);
-    if(userWithName!=false&&userWithName.socket&&userWithName.socket.connected){
-      return false;
-    }
-    //Disconnected user with name exists, hijack the user
     if(userWithName!=false){
-      //Give the new connection to the old user
-      userWithName.socket = socket;
-      return userWithName;
+      return userWithName.updateSocket(socket);
     }
-
     return this.push(new User(name, socket));
   }
   get names(){

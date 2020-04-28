@@ -1,16 +1,17 @@
 'use strict';
-
-function User(name, socket){
-  return {name: name, conn: socket};
-}
-User.prototype.updateSocket = function(socket){
-  //Check it is closed before
-  if((users[idx].socket)&&users[idx].socket.connected){
-    return false;
+class User{
+  name;
+  conn;
+  constructor(name, socket){
+    this.name = name;
+    this.conn = socket;
   }
-  else{
-    users[idx].socket = socket;
-    return true;
+  updateSocket(socket){
+    if(this.conn&&this.conn.connected){
+      return false;
+    }
+    this.conn = socket;
+    return this;
   }
 }
 User.prototype.kick = function(reason){
