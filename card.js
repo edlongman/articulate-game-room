@@ -3,6 +3,7 @@ class Generator{};//to implement
 class Card{
   generator=null;//contains either an image file, or other card class that implements a generator function
   value=null;
+  dealt=false;
   constructor(source){
     this.generator = source;
   }
@@ -20,6 +21,10 @@ class Card{
       return this;
     }
     this.value  = this.generator;
+    return this;
+  }
+  deal(){
+    this.dealt = true;
     return this;
   }
 }
