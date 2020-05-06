@@ -25,7 +25,7 @@ app.use('/card/create', imgStore.upload20img, function addUploaded(req, res, nex
   if(req.imageUpload){
     var new_cards = req.files.map((item) => Card.fromFile(item).generate().value);
     res.status(201).send(new_cards);
-    cards.concat(new_cards);
+    cards = cards.concat(new_cards);
     cardNotifier.emit('cards',new_cards);
   }
 });

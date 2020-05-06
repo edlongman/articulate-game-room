@@ -50,7 +50,16 @@ Articulate admin panel
         method: 'POST',
         body: submit_data
       })
-      .then( (response)=>response.json() )
+      .then( (response)=>{
+        if(!response.ok){
+          const parser = new DOMParser();
+          return (response.text().then((text) => {
+            const errorText = parser.parseFromString(text, 'text/html').body.innerText;
+            throw Error(response.status + ": "+ errorText);
+          }));
+        }
+        return response.json()
+      })
       .then( (cards) => {
         cards_div.clearChildren();
         for(var i=0; i<cards.length; i++){
@@ -63,7 +72,7 @@ Articulate admin panel
       .catch( (err) => {
         console.log('Error uploading cards: '+err);
         var div = document.createElement('div');
-        div.textContent = err.message;
+        div.textContent = err;
         div.setAttribute('class', 'note');
         feed_div.appendChild(div);
       })
