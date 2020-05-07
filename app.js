@@ -2,6 +2,7 @@
 const express = require('express');
 const {makeId, shuffle, getRandomInt} = require('./gameUtil');
 const imgStore = require('./imageStore');
+const User = require('./user');
 const Players = require('./players');
 const EventEmitter = require('events');
 const {Image, Dice} = require('./cards')
@@ -37,48 +38,71 @@ httpapp.use('/card/create', imgStore.upload20img, function addUploaded(req, res,
   }
 });
 
-var game_players = new Players();
 var cards = [];
 var round_cards = [];
-class Chameleon extends EventEmitter{
+class ChameleonGame extends EventEmitter{
   duplicator = null;
-  dice = null;
+  dice = new Dice(['A1','A2','A3','A4',
+                   'B1','B2','B3','B4',
+                   'C1','C2','C3','C4',
+                   'D1','D2','D3','D4']);;
+  players = new Players();
+  admin = new User("Admin", null);
+  constructor(){
+    super();
+    this.duplicator=new Duplicator([this.dice], this.players.length);
+    this.duplicator.on("regenerate", (info)=>{
+      game.emit("regenerate", info);
+    });
+  }
+  connectAdmin(socket){
+    if(!this.admin.updateSocket(socket)){
+      return false;
+    }
+    this.admin.conn.on("roll",game.dice.generate.bind(game.dice));
+    this.admin.conn.emit("enable_action", {id: "roll", name: "Reroll the Chameleon Dice"});
+    return true;
+  }
+  addPlayer(name, socket){
+    if (this.players.add(name, socket)){
+      //Notify the other players of joining
+      socket.broadcast.emit('feed', { text: name + " joined the game" });
+      socket.emit('feed', {text: this.currentPlayersString()});
+      this.duplicator.multiplier = this.players.length;
+    }
+    else{
+      return false
+    }
+  }
+  currentPlayersString(){
+    "Current players are: " + this.players.names.join(", ")
+  };
 }
-var game = new Chameleon();
-var io = new EventEmitter(); //Gets overwritten later copy-listeners may be useful
-function adminStart(admin_socket){
-  var mini_chameleon_dice = new Dice(['A1','B2', 'C3', 'D4']);
-  game.dice=mini_chameleon_dice;
-  game.duplicator=new Duplicator([mini_chameleon_dice], game_players.length);
-  admin_socket.on("roll",game.dice.generate.bind(game.dice));
-  game.duplicator.on("regenerate", (info)=>{
-    game.emit("regenerate", info);
-  });
-  admin_socket.emit("enable_action", {id: "roll", name: "Reroll the Chameleon Dice"})
-}
+var game = new ChameleonGame();
+var io = null; //Gets overwritten later copy-listeners may be useful
 
 function connect(socket_io){
   io = socket_io;
-  function currentUsersString(){
-    return "Current players are: " + game_players.names.join(", ");
-  }
   io.on('connection', function (socket) {
     //io.emit('feed', { text: 'hello world' });
     socket.on('join', function(name){
-      if(game_players.add(name, socket)){
-        socket.broadcast.emit('feed', { text: name + " joined the game" });
-        socket.emit('feed', {text: currentUsersString()});
+      if(game.addPlayer(name, socket)){
+        socket.emit('feed', {text: "User socket connected"});
       }
       else{
         socket.emit('kick', {text: "Could not join. User occupied"});
       }
     });
-    socket.on('admin', function(name){
-      socket.emit('feed', {text: "Admin feed connected"});
-      adminStart(socket);
+    socket.on('admin', function(){
+      if(game.connectAdmin(socket)){
+        socket.emit('feed', {text: "Admin socket connected"});
+      }
+      else{
+        socket.emit('kick', {text: "Could not join. Admin occupied"});
+      }
     });
     socket.on('next', function(data){
-      if(game_players.active&&game_players.active.conn == socket){
+      if(game.players.active&&game.players.active.conn == socket){
         // Allowed to ask for next
         throw('Unimplemented next card interface');
       }
