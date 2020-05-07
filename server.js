@@ -13,42 +13,8 @@ server.listen(config.port, () => console.log("server listening on "+config.port)
 
 express.use('/', app.router);
 
+app.connect(io);
 
-function currentUsersString(){
-  return "Current players are: " + app.getUsernames().join(", ");
-}
-io.on('connection', function (socket) {
-  //io.emit('feed', { text: 'hello world' });
-  socket.on('join', function(name){
-    if(app.addUser(name, socket)){
-      socket.broadcast.emit('feed', { text: name + " joined the game" });
-      socket.emit('feed', {text: currentUsersString()});
-    }
-    else{
-      socket.emit('kick', {text: "Could not join. User occupied"});
-    }
-  });
-  socket.on('admin', function(name){
-    socket.emit('feed', {text: "Admin feed connected"});
-    app.adminStart(socket);
-  });
-  socket.on('next', function(data){
-    if(app.currentUser()&&app.currentUser().conn == socket){
-      // Allowed to ask for next
-      app.next();
-    }
-  });
-
-});
-
-app.broadcast.on('cards', function(cardList){
-  for(var i=0;i<cardList.length;i++){
-    io.emit('feed', {text: 'New card ' + cardList[i].src});
-  }
-})
-app.broadcast.on('regenerate', function(info){
-  io.emit('feed', {text: 'Generator updated: ' + info});
-})
 
 // Handle ^C
 process.on('SIGINT', function shutdown(){
