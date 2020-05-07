@@ -1,5 +1,6 @@
 'use strict';
 const EventEmitter = require('events');
+const Generator = require('./generator');
 const {getRandomInt, shuffle} = require('./gameUtil');
 // TODO: extend the generator class
 class Union extends EventEmitter{
@@ -7,6 +8,7 @@ class Union extends EventEmitter{
   cards = [];
   shuffle = true;
   constructor(groups){
+    super();
     // TODO: Listen for regenerate events
     this.groups=groups;
   }
@@ -18,7 +20,7 @@ class Union extends EventEmitter{
     this.emit("regenerate");
   }
   get undealt(){
-    return this.cards.filter((item)=>!item.dealt);
+    return this.groups.filter((item)=>!item.dealt);
   }
   extend(new_group){
     // TODO: Listen for regenerate events?
@@ -40,3 +42,28 @@ class Union extends EventEmitter{
     return shuffle(undealt);
   }
 }
+exports.Union = Union;
+
+class Duplicator extends Union{
+  multiplier =0;
+  constructor(groups, multiple){
+    super(groups);
+    for(var i=0;i<this.groups.length;i++){
+      if(this.groups[i] instanceof Generator){
+        this.groups[i].on('regenerate', this.generate.bind(this));
+      }
+    }
+  }
+  generate(){
+    this.cards = [];
+    const to_dup = this.undealt;
+    for(var i=0;i<to_dup.length;i++){
+      this.cards = this.cards.concat(
+        Array(this.multiple).fill(
+          to_dup[i].deal()
+        ));
+    }
+    this.emit("regenerate", "Dice");
+  }
+}
+exports.Duplicator = Duplicator;

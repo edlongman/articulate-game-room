@@ -2,7 +2,10 @@
 <style>
 body{margin:40px auto;padding:0 10px;max-width:650px;
   line-height:1.6;font-size:18px;font-family:sans-serif;color:#444}
-h1,h2,h3{line-height:1.2}</style>
+h1,h2,h3{line-height:1.2}
+.actions{
+  display: inline.block
+}</style>
 <script src="/socket.io/socket.io.js"></script>
 <h2>
 Articulate admin panel
@@ -11,6 +14,7 @@ Articulate admin panel
   <label for="cards">Upload up to 20 images: </label><input type="file" name="cards" accept="image/*" multiple>
   <input type="submit" name="submit" value="Upload">
 </form>
+<div id="actions"></div>
 <div id="feed"></div>
 <div id="cards"></div>
 <script type="text/javascript">
@@ -38,6 +42,14 @@ Articulate admin panel
     div.setAttribute('class', 'note');
     feed_div.appendChild(div);
   });
+  socket.on("enable_action",function(data){
+    var button = document.createElement('button');
+    button.textContent = data.name;
+    button.addEventListener('click', (ev)=>{
+      socket.emit(data.id);
+    })
+    document.querySelector('#actions').appendChild(button)
+  })
   document.querySelector('form.card-upload').addEventListener('submit',
     function sendUpload(ev){
       ev.preventDefault();

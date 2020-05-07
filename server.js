@@ -30,6 +30,7 @@ io.on('connection', function (socket) {
   });
   socket.on('admin', function(name){
     socket.emit('feed', {text: "Admin feed connected"});
+    app.adminStart(socket);
   });
   socket.on('next', function(data){
     if(app.currentUser()&&app.currentUser().conn == socket){
@@ -44,6 +45,9 @@ app.broadcast.on('cards', function(cardList){
   for(var i=0;i<cardList.length;i++){
     io.emit('feed', {text: 'New card ' + cardList[i].src});
   }
+})
+app.broadcast.on('regenerate', function(info){
+  io.emit('feed', {text: 'Generator updated: ' + info});
 })
 
 // Handle ^C
