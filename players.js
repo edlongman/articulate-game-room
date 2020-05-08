@@ -23,6 +23,11 @@ class Players extends Array{
     }
     return this.push(new User(name, socket));
   }
+  deal(cards){
+    for(var i=0; this.length>0, i<cards.length; i++){
+      this[i%this.length].receiveDeal(cards[i]);
+    }
+  }
   get names(){
     return this.map((item) => item.name);
   }

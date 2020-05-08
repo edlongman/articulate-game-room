@@ -33,7 +33,7 @@ class Dice extends Generator{
       this.value=null;
       return this;
     }
-    this.value = this.sides[getRandomInt(0, sideCount)];
+    this.value = {text: "Dice roll: " + this.sides[getRandomInt(0, sideCount-1)]};
     this.emit("regenerate");
     return this;
   }

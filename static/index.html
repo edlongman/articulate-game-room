@@ -2,15 +2,23 @@
 <style>
 body{margin:40px auto;padding:0 10px;max-width:650px;
   line-height:1.6;font-size:18px;font-family:sans-serif;color:#444}
-h1,h2,h3{line-height:1.2}</style>
+h1,h2,h3{line-height:1.2}
+#hand .card{
+  border: solid 2px black;
+  width: 50%;
+  max-width: 100px;
+  padding: 2px;
+}</style>
 <script src="/socket.io/socket.io.js"></script>
 <h2>
 Welcome to the articulate game room: <a href='/join'>Join</a>
 </h2>
+<div id="hand"></div>
 <div id="feed"></div>
 <script>
   var socket = io(document.location.origin);
   var feed_div = document.getElementById("feed");
+  var hand_div = document.getElementById("hand");
   var name_res = window.prompt("What's your name", "");
   socket.emit('join', name_res);
   socket.on('feed', function (data) {
@@ -19,5 +27,29 @@ Welcome to the articulate game room: <a href='/join'>Join</a>
     div.textContent = data.text;
     div.setAttribute('class', 'note');
     feed_div.appendChild(div);
+  });
+
+  var hand = [];
+  socket.on('hand_deal', function(card){
+    var div = document.createElement('div');
+    if(card.src!==undefined){
+      console.warn("Unimplemented picture card")
+    }
+    div.textContent = card.text;
+    div.setAttribute('class', 'hand');
+    hand_div.appendChild(div);
+    card.dom = div;
+    hand.push(card);
+  });
+  socket.on('hand_retrieve', function(card){
+    const removee_id = hand.indexOf(data);
+    if(removee_id<0){
+      return false;
+    }
+    const removee = hand[removee_id];
+    hand_div.removeChild(removee.dom);
+  });
+  socket.on('hand_flush', function(){
+    console.warn("Unimplemented");
   });
 </script>

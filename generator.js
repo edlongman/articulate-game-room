@@ -10,6 +10,9 @@ class Generator extends EventEmitter{
     console.warn("Unimplemented");
   }
   deal(){
+    if(this.value==null){
+      this.generate();
+    }
     this.dealt = true;
     return this.value;
   }

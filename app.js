@@ -42,16 +42,19 @@ var cards = [];
 var round_cards = [];
 class ChameleonGame extends EventEmitter{
   duplicator = null;
+  dealer_set = null;
   dice = new Dice(['A1','A2','A3','A4',
                    'B1','B2','B3','B4',
                    'C1','C2','C3','C4',
-                   'D1','D2','D3','D4']);;
+                   'D1','D2','D3','D4']);
+  chameleon_card = new Dice(['You are the chameleon']);
   players = new Players();
   admin = new User("Admin", null);
   constructor(){
     super();
     this.duplicator=new Duplicator([this.dice], this.players.length);
-    this.duplicator.on("regenerate", (info)=>{
+    this.dealer_set = new Union([this.duplicator, this.chameleon_card]);
+    this.dealer_set.on("regenerate", (info)=>{
       game.emit("regenerate", info);
     });
   }
@@ -59,8 +62,10 @@ class ChameleonGame extends EventEmitter{
     if(!this.admin.updateSocket(socket)){
       return false;
     }
-    this.admin.conn.on("roll",game.dice.generate.bind(game.dice));
+    this.admin.conn.on("roll",this.dice.generate.bind(this.dice));
     this.admin.conn.emit("enable_action", {id: "roll", name: "Reroll the Chameleon Dice"});
+    this.admin.conn.on("deal",this.deal.bind(this));
+    this.admin.conn.emit("enable_action", {id: "deal", name: "Deal the cards to the players"});
     return true;
   }
   addPlayer(name, socket){
@@ -69,10 +74,16 @@ class ChameleonGame extends EventEmitter{
       socket.broadcast.emit('feed', { text: name + " joined the game" });
       socket.emit('feed', {text: this.currentPlayersString()});
       this.duplicator.multiplier = this.players.length;
+      if(this.duplicator.multiplier<0){
+        this.duplicator.multiplier = 0;
+      }
     }
     else{
       return false
     }
+  }
+  deal(){
+    this.players.deal(this.dealer_set.deal())
   }
   currentPlayersString(){
     "Current players are: " + this.players.names.join(", ")

@@ -2,6 +2,8 @@
 class User{
   name;
   conn;
+  hand=[];
+
   constructor(name, socket){
     this.name = name;
     this.conn = socket;
@@ -12,6 +14,16 @@ class User{
     }
     this.conn = socket;
     return this;
+  }
+  receiveDeal(card){
+    this.hand.push(card);
+    this.conn.emit("hand_deal", card);
+  }
+  flush(){
+    for(var i=0;i<this.hand.length;i++){
+      this.conn.emit("hand_retrieve", card);
+    }
+    this.conn.emit("hand_flush", card);
   }
 }
 User.prototype.kick = function(reason){

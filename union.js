@@ -7,35 +7,53 @@ class Union extends EventEmitter{
   groups = [];
   cards = [];
   shuffle = true;
+  dealt = false;
   constructor(groups){
     super();
+    for(var i=0;i<groups.length;i++){
+      groups[i].on("regenerate", this.generate.bind(this));
+    }
     // TODO: Listen for regenerate events
     this.groups=groups;
   }
   generate(){
     this.cards = [];
-    for(var i=0; i<groups.length; i++){
-      this.cards = this.cards.concat(groups[i].redeal());
+    for(var i=0; i<this.groups.length; i++){
+      const new_card = this.groups[i].deal();
+      if(new_card instanceof Array){
+        for(var j=0;j<new_card.length;j++){
+          new_card[j].dealt = false;
+          this.cards = this.cards.concat(new_card[j]);
+        }
+      }
+      else if(new_card instanceof Object){ //TODO: Make this instanceof Card
+        new_card.dealt=false;
+        this.cards = this.cards.concat(new_card);
+      }
     }
-    this.emit("regenerate");
+    this.dealt = false;
+    this.emit("regenerate", "Union regenerated");
   }
   get undealt(){
-    return this.groups.filter((item)=>!item.dealt);
+    return this.cards.filter((item)=>item.dealt!==true);
   }
   extend(new_group){
     // TODO: Listen for regenerate events?
+    new_group.on("regenerate", this.generate.bind(this));
     this.groups.push(new_group);
     return this;
   }
   draw(){//Take card
-    const undealt = this.undealt();
+    const undealt = this.undealt;
     const idx = getRandomInt(0, undealt.length - 1);
-    return undealt[idx].deal();
+    undealt[idx].dealt=true;
+    return undealt[idx];
   }
   deal(){
-    const undealt = this.undealt();
+    const undealt = this.undealt;
+    this.dealt = true;
     for(var i=0; i<undealt.length; i++){
-      undealt[i].deal();
+      undealt[i].dealt = true;
     }
     if(!this.shuffle)
       return undealt;
@@ -56,14 +74,15 @@ class Duplicator extends Union{
   }
   generate(){
     this.cards = [];
-    const to_dup = this.undealt;
-    for(var i=0;i<to_dup.length;i++){
-      this.cards = this.cards.concat(
-        Array(this.multiple).fill(
-          to_dup[i].deal()
-        ));
+    for(var i=0; i<this.groups.length; i++){
+      const new_card = this.groups[i].deal();
+      if(new_card instanceof Object){ //TODO: Make this instanceof Card
+        new_card.dealt=false;
+        this.cards = this.cards.concat(
+          Array(this.multiplier).fill(new_card));
+      }
     }
-    this.emit("regenerate", "Dice");
+    this.emit("regenerate", "Duplicator");
   }
 }
 exports.Duplicator = Duplicator;
