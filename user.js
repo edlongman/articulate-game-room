@@ -1,18 +1,35 @@
 'use strict';
-class User{
+const EventEmitter = require('events');
+const user_timeout = 5000;//ms
+class User extends EventEmitter{
   name;
   conn;
   hand=[];
 
   constructor(name, socket){
+    super();
     this.name = name;
     this.conn = socket;
+    if(this.conn){
+      this.conn.on('disconnect', () => {
+        if(this.conn&&this.conn.connected)return false;
+        this.emit('disconnect', this.name);
+      }, user_timeout);
+    }
+    else{
+      if(this.conn&&this.conn.connected)return false;
+      this.emit('disconnect', this.name);
+    }
   }
   updateSocket(socket){
     if(this.conn&&this.conn.connected){
       return false;
     }
     this.conn = socket;
+    this.conn.on('disconnect', () => {
+      if(this.conn&&this.conn.connected)return false;
+      this.emit('disconnect', this.name);
+    });
     return this;
   }
   receiveDeal(card){
@@ -30,6 +47,9 @@ class User{
   }
 }
 User.prototype.kick = function(reason){
-  socket.emit('kick', reason);
+  if(!this.conn)return false;
+  this.conn.emit('kick', reason);
+  this.conn.disconnect();
+  return true;
 }
 module.exports = User;

@@ -37,6 +37,13 @@ Welcome to the articulate game room: <a href='/join'>Join</a>
     div.setAttribute('class', 'note');
     feed_div.appendChild(div);
   });
+  socket.on('kick', function (data) {
+    console.log(data);
+    var div = document.createElement('div');
+    div.textContent = data.text;
+    div.setAttribute('class', 'note');
+    feed_div.appendChild(div);
+  });
 
   var hand = [];
   socket.on('hand_deal', function(card){

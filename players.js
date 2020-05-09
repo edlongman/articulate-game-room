@@ -21,7 +21,8 @@ class Players extends Array{
     if(userWithName!=false){
       return userWithName.updateSocket(socket);
     }
-    return this.push(new User(name, socket));
+    const new_len = this.push(new User(name, socket));
+    return this[new_len - 1];
   }
   deal(cards){
     for(var i=0; this.length>0 && i<cards.length; i++){
@@ -41,6 +42,12 @@ class Players extends Array{
       //TODO: Check for user connected?
       user.conn.emit("feed", {text: "Discarded text:" + card.text + ", src: " + card.src});
     })
+  }
+  removeByName(name){
+    const userWithName = this.byName(name);
+    if(userWithName!=false){
+      return userWithName.kick({text: 'User timeout'});
+    }
   }
   get names(){
     return this.map((item) => item.name);

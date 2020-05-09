@@ -72,21 +72,40 @@ class ChameleonGame extends EventEmitter{
       if(card instanceof Object){// TODO: instance of "Card" class
         this.admin.conn.emit("feed",{text: "Discarded text:" + card.text + ", src: " + card.src});
       }
-    })
+    });
+    this.feed.on('feed', (data)=>this.admin.conn.emit("feed", data));
     return true;
   }
   addPlayer(name, socket){
-    if (this.players.add(name, socket)){
-      //Notify the other players of joining
-      socket.broadcast.emit('feed', { text: name + " joined the game" });
-      socket.emit('feed', {text: this.currentPlayersString()});
-      this.duplicator.multiplier = this.players.length;
+    const name_blacklist = ['', null, 'admin', 'null', 'undefined', undefined];
+    if(name_blacklist.indexOf(name)>=0){
+      return false;
+    }
+    const new_player = this.players.add(name, socket);
+    if(new_player == false){
+      return false;
+    }
+    //Notify the other players of joining
+    socket.broadcast.emit('feed', { text: name + " joined the game" });
+    socket.emit('feed', {text: this.currentPlayersString()});
+    this.duplicator.multiplier = this.players.length - 1;
+    if(this.duplicator.multiplier<0){
+      this.duplicator.multiplier = 0;
+    }
+
+    //If the new_player us a user type then register the disconnect event.
+    if(new_player instanceof User){
+      new_player.on('disconnect', this.removePlayer.bind(this));
+    }
+    return new_player;
+  }
+  removePlayer(name){
+    if(this.players.removeByName(name)){
+      this.feed.emit('feed', {text: name + " left the game"});
+      this.duplicator.multiplier = this.players.length - 1;
       if(this.duplicator.multiplier<0){
         this.duplicator.multiplier = 0;
       }
-    }
-    else{
-      return false
     }
   }
   deal(){
