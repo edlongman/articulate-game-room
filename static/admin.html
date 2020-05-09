@@ -10,7 +10,7 @@ h1,h2,h3{line-height:1.2}
 <h2>
 Articulate admin panel
 </h2>
-<form class="card-upload" action="cardUpload" method="post">
+<form class="card-upload" action="" method="post">
   <label for="cards">Upload up to 20 images: </label><input type="file" name="cards" accept="image/*" multiple>
   <input type="submit" name="submit" value="Upload">
 </form>
@@ -31,7 +31,7 @@ Articulate admin panel
 </script>
 <script type="text/javascript">
   'use strict';
-  var socket = io(document.location.origin);
+  var socket = io('{{ mountpath }}');
   var feed_div = document.getElementById("feed");
   var cards_div = document.getElementById("cards");
   socket.emit('admin', 'admin');
@@ -58,7 +58,7 @@ Articulate admin panel
       for(var i=0; i<card_input.files.length; i++){
         submit_data.append('cards', card_input.files[i]);
       }
-      fetch('card/create', {
+      fetch('{{ mountpath }}/card/create', {
         method: 'POST',
         body: submit_data
       })
@@ -76,7 +76,7 @@ Articulate admin panel
         cards_div.clearChildren();
         for(var i=0; i<cards.length; i++){
           var img = document.createElement('img');
-          img.src = 'library/'+cards[i].src;
+          img.src = '{{ mountpath }}/library/'+ cards[i].src;
           img.setAttribute('class', 'card');
           cards_div.appendChild(img);
         }

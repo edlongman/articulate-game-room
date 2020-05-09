@@ -20,12 +20,12 @@ h1,h2,h3{line-height:1.2}
 }</style>
 <script src="/socket.io/socket.io.js"></script>
 <h2>
-Welcome to the articulate game room: <a href='/join'>Join</a>
+Welcome to the {{ mountpath }} game room: <a href='/join'>Join</a>
 </h2>
 <div id="hand" class="flex_cards"></div>
 <div id="feed"></div>
 <script>
-  var socket = io(document.location.origin);
+  var socket = io('{{ mountpath }}');
   var feed_div = document.getElementById("feed");
   var hand_div = document.getElementById("hand");
   var name_res = window.prompt("What's your name", "");
