@@ -3,17 +3,26 @@
 body{margin:40px auto;padding:0 10px;max-width:650px;
   line-height:1.6;font-size:18px;font-family:sans-serif;color:#444}
 h1,h2,h3{line-height:1.2}
-#hand .card{
-  border: solid 2px black;
+.flex_cards{
+  display:flexbox;
+  display:flex;
+  position: relative;
+  flex-wrap: wrap;
+}
+.card{
+  flex: 1;
   width: 50%;
-  max-width: 100px;
-  padding: 2px;
+  max-width: 200px;
+  min-width: 150px;
+  margin: 2px;
+  border: 2px solid black;
+  padding: 4px;
 }</style>
 <script src="/socket.io/socket.io.js"></script>
 <h2>
 Welcome to the articulate game room: <a href='/join'>Join</a>
 </h2>
-<div id="hand"></div>
+<div id="hand" class="flex_cards"></div>
 <div id="feed"></div>
 <script>
   var socket = io(document.location.origin);
@@ -36,7 +45,7 @@ Welcome to the articulate game room: <a href='/join'>Join</a>
       console.warn("Unimplemented picture card")
     }
     div.textContent = card.text;
-    div.setAttribute('class', 'hand');
+    div.setAttribute('class', 'card');
     hand_div.appendChild(div);
     card.dom = div;
     hand.push(card);
