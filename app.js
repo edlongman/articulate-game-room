@@ -50,6 +50,7 @@ class ChameleonGame extends EventEmitter{
   chameleon_card = new Dice(['You are the chameleon']);
   players = new Players();
   admin = new User("Admin", null);
+  feed = new EventEmitter();
   constructor(){
     super();
     this.duplicator=new Duplicator([this.dice], this.players.length);
@@ -57,6 +58,7 @@ class ChameleonGame extends EventEmitter{
     this.dealer_set.on("regenerate", (info)=>{
       game.emit("regenerate", info);
     });
+    this.feed.on('discard', this.players.feedDiscard.bind(this.players));
   }
   connectAdmin(socket){
     if(!this.admin.updateSocket(socket)){
@@ -66,6 +68,11 @@ class ChameleonGame extends EventEmitter{
     this.admin.conn.emit("enable_action", {id: "roll", name: "Reroll the Chameleon Dice"});
     this.admin.conn.on("deal",this.deal.bind(this));
     this.admin.conn.emit("enable_action", {id: "deal", name: "Deal the cards to the players"});
+    this.feed.on('discard', (card) => {
+      if(card instanceof Object){// TODO: instance of "Card" class
+        this.admin.conn.emit("feed",{text: "Discarded text:" + card.text + ", src: " + card.src});
+      }
+    })
     return true;
   }
   addPlayer(name, socket){
@@ -83,6 +90,7 @@ class ChameleonGame extends EventEmitter{
     }
   }
   deal(){
+    this.players.emptyHands.call(this.players, this.feed);
     this.players.deal(this.dealer_set.deal())
   }
   currentPlayersString(){

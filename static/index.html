@@ -51,12 +51,13 @@ Welcome to the articulate game room: <a href='/join'>Join</a>
     hand.push(card);
   });
   socket.on('hand_retrieve', function(card){
-    const removee_id = hand.indexOf(data);
+    const removee_id = hand.map((item) => item.id).indexOf(card.id);
     if(removee_id<0){
       return false;
     }
-    const removee = hand[removee_id];
+    const removee = (hand.splice(removee_id, 1))[0];
     hand_div.removeChild(removee.dom);
+
   });
   socket.on('hand_flush', function(){
     console.warn("Unimplemented");

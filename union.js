@@ -1,7 +1,7 @@
 'use strict';
 const EventEmitter = require('events');
 const Generator = require('./generator');
-const {getRandomInt, shuffle} = require('./gameUtil');
+const {getRandomInt, shuffle, makeId} = require('./gameUtil');
 // TODO: extend the generator class
 class Union extends EventEmitter{
   groups = [];
@@ -23,11 +23,13 @@ class Union extends EventEmitter{
       if(new_card instanceof Array){
         for(var j=0;j<new_card.length;j++){
           new_card[j].dealt = false;
+          new_card[j].id = makeId(7); //TODO: Card class should auto gen this id
           this.cards = this.cards.concat(new_card[j]);
         }
       }
       else if(new_card instanceof Object){ //TODO: Make this instanceof Card
-        new_card.dealt=false;
+        new_card.dealt = false;
+        new_card.id = makeId(7); //TODO: Card class should auto gen this id
         this.cards = this.cards.concat(new_card);
       }
     }

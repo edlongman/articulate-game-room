@@ -16,14 +16,17 @@ class User{
     return this;
   }
   receiveDeal(card){
-    this.hand.push(card);
+    this.hand.push(Object.assign({},card));//TODO: Card class should shallow copy this
     this.conn.emit("hand_deal", card);
   }
   flush(){
-    for(var i=0;i<this.hand.length;i++){
+    this.hand.forEach((card) => {
       this.conn.emit("hand_retrieve", card);
-    }
-    this.conn.emit("hand_flush", card);
+    })
+    this.conn.emit("hand_flush");
+    const hand_cache = this.hand;
+    this.hand = [];
+    return hand_cache;
   }
 }
 User.prototype.kick = function(reason){

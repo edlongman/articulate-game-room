@@ -24,9 +24,23 @@ class Players extends Array{
     return this.push(new User(name, socket));
   }
   deal(cards){
-    for(var i=0; this.length>0, i<cards.length; i++){
+    for(var i=0; this.length>0 && i<cards.length; i++){
       this[i%this.length].receiveDeal(cards[i]);
     }
+  }
+  emptyHands(card_dest){
+    this.forEach((user)=>{
+      const discarded = user.flush();
+      for(var j=0;j<discarded.length;j++){
+        card_dest.emit('discard', discarded[j]);
+      }
+    });
+  }
+  feedDiscard(card){
+    this.forEach((user)=>{
+      //TODO: Check for user connected?
+      user.conn.emit("feed", {text: "Discarded text:" + card.text + ", src: " + card.src});
+    })
   }
   get names(){
     return this.map((item) => item.name);
