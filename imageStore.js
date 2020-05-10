@@ -24,7 +24,7 @@ const storage = multer.diskStorage({
   }
 });
 const upload = multer({ storage: storage,
-  limits:{fileSize: 1000000} });
+  limits:{fileSize: 10000000} });
 const cardUpload = upload.array('cards', 20);
 function finishUpload(req, res, next) {
   req.imageUpload = true; //Mark as successful upload

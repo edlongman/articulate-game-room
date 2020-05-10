@@ -1,6 +1,6 @@
 {
-  "name": "excluding-dice-roll",
-  "version": "0.0.1",
+  "name": "articulate-game-room",
+  "version": "0.0.2",
   "description": "",
   "main": "server.js",
   "scripts": {
@@ -8,14 +8,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+ssh://git@github.com/edlongman/excluding-dice-roll.git"
+    "url": "git+ssh://git@github.com/edlongman/articulate-game-room.git"
   },
   "author": "Edward Longman",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/edlongman/excluding-dice-roll/issues"
+    "url": "https://github.com/edlongman/articulate-game-room/issues"
   },
-  "homepage": "https://github.com/edlongman/excluding-dice-roll#readme",
+  "homepage": "https://github.com/edlongman/articulate-game-room#readme",
   "dependencies": {
     "express": "^4.17.1",
     "multer": "^1.4.2",

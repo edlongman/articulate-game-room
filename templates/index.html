@@ -29,7 +29,7 @@ h1,h2,h3{line-height:1.2}
 var setup = { base: '{{ mountpath }}', img_lib: '{{ mountpath }}/library/' };
 </script>
 <h2>
-Welcome to the Chameleon game room: <a href='/join'>Join</a>
+Welcome to Chameleon, <div id="Name"></div>
 </h2>
 <div class="zones"></div>
 <div id="hand" class="flex_cards"></div>
@@ -54,28 +54,25 @@ Welcome to the Chameleon game room: <a href='/join'>Join</a>
     div.setAttribute('class', 'note');
     feed_div.appendChild(div);
   });
-  class Zone{
-    cards_dom =  null;
-    gallery = GLightbox({selector: '', elements: []});
-    cards = [];
-    id = null;
-    name = null;
-    constructor(zone_info){
-      this.id = zone_info.id;
-      this.name = zone_info.name;
-      var zone_area = document.createElement('div');
-      zone_area.setAttribute('class', 'zone');
-      zone_area.id = zone_info.id;
-      var zone_title = document.createElement('h3');
-      zone_title.textContent = zone_info.name;
-      this.cards_dom = document.createElement('div');
-      this.cards_dom.setAttribute('class', 'flex_cards');
-      this.gallery.setElements(this.cards_dom.children);
-      zone_area.appendChild(zone_title);
-      zone_area.appendChild(this.cards_dom);
-      this.dom = zone_area;
-    }
-    add(card){
+  var Zone = function(zone_info){
+    this.cards_dom = null;
+    this.gallery = GLightbox({selector: '', elements: []});
+    this.cards = [];
+    this.id = zone_info.id;
+    this.name = zone_info.name;
+    var zone_area = document.createElement('div');
+    zone_area.setAttribute('class', 'zone');
+    zone_area.id = zone_info.id;
+    var zone_title = document.createElement('h3');
+    zone_title.textContent = zone_info.name;
+    this.cards_dom = document.createElement('div');
+    this.cards_dom.setAttribute('class', 'flex_cards');
+    this.gallery.setElements(this.cards_dom.children);
+    zone_area.appendChild(zone_title);
+    zone_area.appendChild(this.cards_dom);
+    this.dom = zone_area;
+  }
+  Zone.prototype.add = function(card){
       var div = document.createElement('div');
       card.type = 'inline';
       div.textContent = card.text;
@@ -99,7 +96,7 @@ Welcome to the Chameleon game room: <a href='/join'>Join</a>
         });
       }
     }
-    remove(card){
+  Zone.prototype.remove = function(card){
       var removee_idx = this.cards.map((item)=>item.id).indexOf(card.id);
       if(removee_idx<0){
         return false;
@@ -108,7 +105,6 @@ Welcome to the Chameleon game room: <a href='/join'>Join</a>
       this.cards_dom.removeChild(removee.dom);
       this.gallery.setElements(this.cards_dom.children);
     }
-  }
   var zones = [];
 
   var hand = [];
