@@ -10,10 +10,10 @@ var io = require('socket.io')(server);
 server.listen(config.port, () => console.log("server listening on "+config.port));
 // WARNING: app.listen(80) will NOT work here!
 
+const mount_on = '/';
+express.use(mount_on, app.router);
 
-express.use('/', app.router);
-
-app.connect(io);
+app.connect(io.of(mount_on));
 
 
 // Handle ^C

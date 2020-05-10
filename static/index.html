@@ -19,13 +19,16 @@ h1,h2,h3{line-height:1.2}
   padding: 4px;
 }</style>
 <script src="/socket.io/socket.io.js"></script>
+<script>
+var setup = { base: '{{ mountpath }}', img_lib: '{{ mountpath }}/library' };
+</script>
 <h2>
-Welcome to the {{ mountpath }} game room: <a href='/join'>Join</a>
+Welcome to the Chameleon game room: <a href='/join'>Join</a>
 </h2>
 <div id="hand" class="flex_cards"></div>
 <div id="feed"></div>
 <script>
-  var socket = io('{{ mountpath }}');
+  var socket = io(setup.base);
   var feed_div = document.getElementById("feed");
   var hand_div = document.getElementById("hand");
   var name_res = window.prompt("What's your name", "");

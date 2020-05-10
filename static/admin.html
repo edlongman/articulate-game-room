@@ -7,6 +7,9 @@ h1,h2,h3{line-height:1.2}
   display: inline.block
 }</style>
 <script src="/socket.io/socket.io.js"></script>
+<script>
+var setup = { base: '{{ mountpath }}', img_lib: '{{ mountpath }}/library' };
+</script>
 <h2>
 Articulate admin panel
 </h2>
@@ -31,7 +34,7 @@ Articulate admin panel
 </script>
 <script type="text/javascript">
   'use strict';
-  var socket = io('{{ mountpath }}');
+  var socket = io(setup.base);
   var feed_div = document.getElementById("feed");
   var cards_div = document.getElementById("cards");
   socket.emit('admin', 'admin');
@@ -58,7 +61,7 @@ Articulate admin panel
       for(var i=0; i<card_input.files.length; i++){
         submit_data.append('cards', card_input.files[i]);
       }
-      fetch('{{ mountpath }}/card/create', {
+      fetch(setup.base + '/card/create', {
         method: 'POST',
         body: submit_data
       })
@@ -76,7 +79,7 @@ Articulate admin panel
         cards_div.clearChildren();
         for(var i=0; i<cards.length; i++){
           var img = document.createElement('img');
-          img.src = '{{ mountpath }}/library/'+ cards[i].src;
+          img.src = setup.img_lib + cards[i].src;
           img.setAttribute('class', 'card');
           cards_div.appendChild(img);
         }
