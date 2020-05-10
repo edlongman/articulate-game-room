@@ -3,6 +3,7 @@ const EventEmitter = require('events');
 class Generator extends EventEmitter{
   value=null;
   dealt=false;
+  reusable = true; // TODO: Change this to not reset the reusable property on generate
   constructor(){
     super();
   }
@@ -10,10 +11,15 @@ class Generator extends EventEmitter{
     console.warn("Unimplemented");
   }
   deal(){
+    if(this.dealt){
+      return false;
+    }
     if(this.value==null){
       this.generate();
     }
-    this.dealt = true;
+    if(!this.reusable){
+      this.dealt = true;
+    }
     return this.value;
   }
 }

@@ -17,14 +17,21 @@ h1,h2,h3{line-height:1.2}
   margin: 2px;
   border: 2px solid black;
   padding: 4px;
+  position: relative;
+}
+.card img{
+  width: 100%;
 }</style>
 <script src="/socket.io/socket.io.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/glightbox/dist/css/glightbox.min.css">
+<script src="https://cdn.jsdelivr.net/gh/mcstudios/glightbox/dist/js/glightbox.min.js"></script>
 <script>
-var setup = { base: '{{ mountpath }}', img_lib: '{{ mountpath }}/library' };
+var setup = { base: '{{ mountpath }}', img_lib: '{{ mountpath }}/library/' };
 </script>
 <h2>
 Welcome to the Chameleon game room: <a href='/join'>Join</a>
 </h2>
+<div class="zones"></div>
 <div id="hand" class="flex_cards"></div>
 <div id="feed"></div>
 <script>
@@ -47,6 +54,62 @@ Welcome to the Chameleon game room: <a href='/join'>Join</a>
     div.setAttribute('class', 'note');
     feed_div.appendChild(div);
   });
+  class Zone{
+    cards_dom =  null;
+    gallery = GLightbox({selector: '', elements: []});
+    cards = [];
+    id = null;
+    name = null;
+    constructor(zone_info){
+      this.id = zone_info.id;
+      this.name = zone_info.name;
+      var zone_area = document.createElement('div');
+      zone_area.setAttribute('class', 'zone');
+      zone_area.id = zone_info.id;
+      var zone_title = document.createElement('h3');
+      zone_title.textContent = zone_info.name;
+      this.cards_dom = document.createElement('div');
+      this.cards_dom.setAttribute('class', 'flex_cards');
+      this.gallery.setElements(this.cards_dom.children);
+      zone_area.appendChild(zone_title);
+      zone_area.appendChild(this.cards_dom);
+      this.dom = zone_area;
+    }
+    add(card){
+      var div = document.createElement('div');
+      card.type = 'inline';
+      div.textContent = card.text;
+      card.content = card.text;
+      if(card.src!==undefined){
+        console.warn("Unimplemented picture card");
+        var img = document.createElement('img');
+        card.href = setup.img_lib + card.src;
+        img.src = card.href;
+        div.appendChild(img);
+        card.type = 'image';
+      }
+      div.setAttribute('class', 'card');
+      this.cards_dom.appendChild(div);
+      card.dom = div;
+      this.cards.push(card);
+      this.gallery.setElements(this.cards);
+      for(let node of this.cards_dom.children){
+        node.addEventListener('click', (e, target)=>{
+          this.gallery.open(target);
+        });
+      }
+    }
+    remove(card){
+      var removee_idx = this.cards.map((item)=>item.id).indexOf(card.id);
+      if(removee_idx<0){
+        return false;
+      }
+      const removee = (this.cards.splice(removee_idx, 1))[0];
+      this.cards_dom.removeChild(removee.dom);
+      this.gallery.setElements(this.cards_dom.children);
+    }
+  }
+  var zones = [];
 
   var hand = [];
   socket.on('hand_deal', function(card){
@@ -72,4 +135,25 @@ Welcome to the Chameleon game room: <a href='/join'>Join</a>
   socket.on('hand_flush', function(){
     console.warn("Unimplemented");
   });
+  socket.on('zone_new', function(zone_info){
+    const new_zone = new Zone(zone_info);
+    document.querySelector('.zones').appendChild(new_zone.dom);
+
+    zones.push(new_zone);
+
+  });
+  socket.on('zone_deal', function(card_info){
+    var zone_idx = zones.map((item) => item.id).indexOf(card_info.zone);
+    if(zone_idx<0){
+      return false;
+    }
+    zones[zone_idx].add(card_info);
+  });
+  socket.on('zone_retrieve', function(card_info){
+    var zone_idx = zones.map((item) => item.id).indexOf(card_info.zone);
+    if(zone_idx<0){
+      return false;
+    }
+    zones[zone_idx].remove(card_info)
+  })
 </script>

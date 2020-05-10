@@ -20,6 +20,9 @@ class Union extends EventEmitter{
     this.cards = [];
     for(var i=0; i<this.groups.length; i++){
       const new_card = this.groups[i].deal();
+      if(new_card == false){
+        continue;
+      }
       if(new_card instanceof Array){
         for(var j=0;j<new_card.length;j++){
           new_card[j].dealt = false;
@@ -40,14 +43,30 @@ class Union extends EventEmitter{
     return this.cards.filter((item)=>item.dealt!==true);
   }
   extend(new_group){
-    // TODO: Listen for regenerate events?
-    new_group.on("regenerate", this.generate.bind(this));
-    this.groups.push(new_group);
+    if(new_group instanceof Generator){
+      this.groups.push(new_group);
+      const new_card = new_group.deal();
+      new_card.dealt = false;
+      new_card.id = makeId(7); //TODO: Card class should auto gen this id
+      this.cards = this.cards.concat(new_card);
+      new_group.on("regenerate", this.generate.bind(this));
+    }
+    else if(new_group instanceof Array){
+      new_group.forEach((item)=>this.extend(item));
+    }
+    else{
+      console.warn("Unknown card type")
+    }
     return this;
   }
   draw(){//Take card
     const undealt = this.undealt;
-    const idx = getRandomInt(0, undealt.length - 1);
+    if(undealt.length<1){
+      return false;
+    }
+    var idx = 0;
+    if(this.shuffle)
+      idx = getRandomInt(0, undealt.length - 1);
     undealt[idx].dealt=true;
     return undealt[idx];
   }

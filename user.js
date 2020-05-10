@@ -45,6 +45,16 @@ class User extends EventEmitter{
     this.hand = [];
     return hand_cache;
   }
+  subscribeZone(zone){
+    var zone_id = zone.id;
+    this.conn.emit("zone_new", {id: zone_id, name: zone.name});
+    zone.on("deal", (card)=>{
+      this.conn.emit("zone_deal", Object.assign({zone: zone_id}, card));
+    })
+    zone.on("retrieve",(card)=>{
+      this.conn.emit("zone_retrieve", Object.assign({zone: zone_id}, card));
+    })
+  }
 }
 User.prototype.kick = function(reason){
   if(!this.conn)return false;

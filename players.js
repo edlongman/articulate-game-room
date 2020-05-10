@@ -43,6 +43,12 @@ class Players extends Array{
       user.conn.emit("feed", {text: "Discarded text:" + card.text + ", src: " + card.src});
     })
   }
+  subscribeZone(zone){
+    this.forEach((user) => {
+      user.subscribeZone(zone);
+    });
+
+  }
   removeByName(name){
     const userWithName = this.byName(name);
     if(userWithName!=false){

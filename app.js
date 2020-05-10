@@ -10,7 +10,8 @@ const {Union, Duplicator} = require('./union')
 
 var httpapp = express();
 const nunjucks = require('nunjucks');
-const env = nunjucks.configure("static",{
+const env = nunjucks.configure("templates",{
+  noCache: true,
   express: httpapp
 });
 env.addGlobal("mountpath",express.mountpath);
@@ -33,7 +34,8 @@ httpapp.use(express.static(__dirname+'/static',{index: 'index.html'})); // Sets 
 httpapp.use('/library', imgStore.library);
 httpapp.use('/card/create', imgStore.upload20img, function addUploaded(req, res, next){
   if(req.imageUpload){
-    var new_cards = req.files.map((item) => (new Image(item)).generate().value);
+    var new_cards = req.files.map((item) => (new Image(item)));
+    var new_images = new_cards.map((item) => item.generator);
     res.status(201).send(new_cards);
     cards = cards.concat(new_cards);
     game.emit('cards',new_cards);
@@ -42,6 +44,24 @@ httpapp.use('/card/create', imgStore.upload20img, function addUploaded(req, res,
 
 var cards = [];
 var round_cards = [];
+class Zone extends EventEmitter{
+  drain = null;
+  cards = [];
+  name = 'Zone ';
+  id = makeId(7);
+  draw(card){
+    this.cards.push(card);
+    this.emit('deal', card);
+  }
+  retrieve(card){
+    const removee_id = this.cards.map((item) => item.id).indexOf(card.id);
+    if(removee_id<0){
+      return false;
+    }
+    const removee = (this.cards.splice(removee_id, 1))[0];
+    this.emit('retrieve', removee);
+  }
+}
 class ChameleonGame extends EventEmitter{
   duplicator = null;
   dealer_set = null;
@@ -50,17 +70,23 @@ class ChameleonGame extends EventEmitter{
                    'C1','C2','C3','C4',
                    'D1','D2','D3','D4']);
   chameleon_card = new Dice(['You are the chameleon']);
+  topic_cards = new Union([]);
   players = new Players();
   admin = new User("Admin", null);
   feed = new EventEmitter();
+  play_zone = null;
   constructor(){
     super();
     this.duplicator=new Duplicator([this.dice], this.players.length);
     this.dealer_set = new Union([this.duplicator, this.chameleon_card]);
+    this.play_zone = new Zone(this.feed);
+    this.play_zone.name = "Topic"
     this.dealer_set.on("regenerate", (info)=>{
       game.emit("regenerate", info);
     });
+    this.players.subscribeZone(this.play_zone);
     this.feed.on('discard', this.players.feedDiscard.bind(this.players));
+    this.on('cards', this.topic_cards.extend.bind(this.topic_cards));
   }
   connectAdmin(socket){
     if(!this.admin.updateSocket(socket)){
@@ -70,6 +96,8 @@ class ChameleonGame extends EventEmitter{
     this.admin.conn.emit("enable_action", {id: "roll", name: "Reroll the Chameleon Dice"});
     this.admin.conn.on("deal",this.deal.bind(this));
     this.admin.conn.emit("enable_action", {id: "deal", name: "Deal the cards to the players"});
+    this.admin.conn.on("play",this.deal_topic.bind(this));
+    this.admin.conn.emit("enable_action", {id: "play", name: "Play the first card in hand"});
     this.feed.on('discard', (card) => {
       if(card instanceof Object){// TODO: instance of "Card" class
         this.admin.conn.emit("feed",{text: "Discarded text:" + card.text + ", src: " + card.src});
@@ -95,9 +123,10 @@ class ChameleonGame extends EventEmitter{
       this.duplicator.multiplier = 0;
     }
 
-    //If the new_player us a user type then register the disconnect event.
+    //If the new_player is a user type then do the setup and subscriptions
     if(new_player instanceof User){
       new_player.on('disconnect', this.removePlayer.bind(this));
+      new_player.subscribeZone(this.play_zone);
     }
     return new_player;
   }
@@ -112,10 +141,20 @@ class ChameleonGame extends EventEmitter{
   }
   deal(){
     this.players.emptyHands.call(this.players, this.feed);
-    this.players.deal(this.dealer_set.deal())
+    this.players.deal(this.dealer_set.deal());
+  }
+  deal_topic(){
+    while(this.play_zone.cards.length>0){
+      this.play_zone.retrieve(this.play_zone.cards[0]);
+    }
+    const topic_card = this.topic_cards.draw();
+    if(topic_card==false){
+      return false;
+    }
+    this.play_zone.draw(topic_card);
   }
   currentPlayersString(){
-    "Current players are: " + this.players.names.join(", ")
+    return "Current players are: " + this.players.names.join(", ");
   };
 }
 var game = new ChameleonGame();
@@ -150,11 +189,6 @@ function connect(socket_io){
 
   });
 
-  game.on('cards', function(cardList){
-    for(var i=0;i<cardList.length;i++){
-      io.emit('feed', {text: 'New card ' + cardList[i].src});
-    }
-  })
   game.on('regenerate', function(info){
     io.emit('feed', {text: 'Generator updated: ' + info});
   });

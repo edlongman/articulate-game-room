@@ -6,6 +6,7 @@ class Image extends Generator{
   constructor(multer_file){
     super();
     this.source = {src:multer_file.filename};
+    this.reusable = false;
   }
 
   generate(){
