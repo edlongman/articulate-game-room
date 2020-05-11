@@ -76,6 +76,8 @@ Articulate admin panel
         return response.json()
       })
       .then( (cards) => {
+        // Empty file input.
+        card_input.value = '';
         cards_div.clearChildren();
         for(var i=0; i<cards.length; i++){
           var img = document.createElement('img');
