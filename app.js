@@ -34,8 +34,8 @@ httpapp.use('/library', imgStore.library);
 httpapp.use('/card/create', imgStore.upload20img, function addUploaded(req, res, next){
   if(req.imageUpload){
     var new_cards = req.files.map((item) => (new Image(item)));
-    var new_images = new_cards.map((item) => item.generator);
-    res.status(201).send(new_cards);
+    var new_images = new_cards.map((item) => item.source);
+    res.status(201).send(new_images);
     cards = cards.concat(new_cards);
     game.emit('cards',new_cards);
   }
