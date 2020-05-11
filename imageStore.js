@@ -5,14 +5,14 @@ const fs = require('fs');
 const {makeId} = require('./gameUtil');
 const express = require('express');
 const asyncUnlink = util.promisify(fs.unlink);
-
+const path = require('path');
 const fileLen = 10;
 const extMap = {"image/png": 'png', "image/jpeg": 'jpeg'};
 
 var instance_upload_list = [];
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, 'useruploads')
+    cb(null, path.join(__dirname, 'useruploads'))
   },
   filename: function (req, file, cb) {
     const extension = extMap[file.mimetype];
@@ -44,7 +44,7 @@ async function cleanUp(){
 }
 module.exports = {
   upload20img: [cardUpload, finishUpload],
-  library: express.static(__dirname+'/useruploads',{
+  library: express.static(path.join(__dirname, 'useruploads'),{
     index: null,
     maxAge: 604800,//one week - filenames are unique
   }),

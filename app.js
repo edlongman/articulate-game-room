@@ -7,12 +7,11 @@ const Players = require('./players');
 const EventEmitter = require('events');
 const {Image, Dice} = require('./cards')
 const {Union, Duplicator} = require('./union')
-
+const path = require('path');
 var httpapp = express();
 const nunjucks = require('nunjucks');
-const env = nunjucks.configure("templates",{
-  noCache: true,
-  express: httpapp
+const env = new nunjucks.configure(path.join(__dirname,"templates"),{
+  noCache: true
 });
 env.addGlobal("mountpath",express.mountpath);
 function sendOkStyled(res, content){
@@ -25,10 +24,10 @@ function sendOkStyled(res, content){
   res.status(200).send(header+content+footer);
 }
 httpapp.get('/', async function(req, res){
-  res.render('index.html', {mountpath: req.baseUrl});
+  res.send(env.render('index.html', {mountpath: req.baseUrl}));
 });
 httpapp.get('/admin', async function(req, res){
-  res.render('admin.html', {mountpath: req.baseUrl});
+  res.send(env.render('admin.html', {mountpath: req.baseUrl}));
 });
 httpapp.use(express.static(__dirname+'/static',{index: 'index.html'})); // Sets which page to load first
 httpapp.use('/library', imgStore.library);

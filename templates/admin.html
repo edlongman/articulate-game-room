@@ -8,12 +8,12 @@ h1,h2,h3{line-height:1.2}
 }</style>
 <script src="/socket.io/socket.io.js"></script>
 <script>
-var setup = { base: '{{ mountpath }}', img_lib: '{{ mountpath }}/library' };
+var setup = { base: '{{ mountpath }}', img_lib: '{{ mountpath }}/library/' };
 </script>
 <h2>
 Articulate admin panel
 </h2>
-<form class="card-upload" action="" method="post">
+<form class="card-upload" action="/" method="post">
   <label for="cards">Upload up to 20 images: </label><input type="file" name="cards" accept="image/*" multiple>
   <input type="submit" name="submit" value="Upload">
 </form>
