@@ -3,6 +3,7 @@ const express = require('express');
 const {makeId, shuffle, getRandomInt} = require('./gameUtil');
 const imgStore = require('./imageStore');
 const User = require('./user');
+const Zone = require('./zone');
 const Players = require('./players');
 const EventEmitter = require('events');
 const {Image, Dice} = require('./cards')
@@ -14,15 +15,6 @@ const env = new nunjucks.configure(path.join(__dirname,"templates"),{
   noCache: true
 });
 env.addGlobal("mountpath",express.mountpath);
-function sendOkStyled(res, content){
-  const header = `
-  <meta name="viewport" content="width=device-width, initial-scale=1"><style>
-  body{margin:40px auto;padding:0 10px;max-width:650px;
-    line-height:1.6;font-size:18px;font-family:sans-serif;color:#444}
-  h1,h2,h3{line-height:1.2}</style><h2>`;
-  const footer = `</h2>`
-  res.status(200).send(header+content+footer);
-}
 httpapp.get('/', async function(req, res){
   res.send(env.render('index.html', {mountpath: req.baseUrl}));
 });
@@ -43,24 +35,6 @@ httpapp.use('/card/create', imgStore.upload20img, function addUploaded(req, res,
 
 var cards = [];
 var round_cards = [];
-class Zone extends EventEmitter{
-  drain = null;
-  cards = [];
-  name = 'Zone ';
-  id = makeId(7);
-  draw(card){
-    this.cards.push(card);
-    this.emit('deal', card);
-  }
-  retrieve(card){
-    const removee_id = this.cards.map((item) => item.id).indexOf(card.id);
-    if(removee_id<0){
-      return false;
-    }
-    const removee = (this.cards.splice(removee_id, 1))[0];
-    this.emit('retrieve', removee);
-  }
-}
 class ChameleonGame extends EventEmitter{
   duplicator = null;
   dealer_set = null;
