@@ -70,7 +70,7 @@ function finishUpload(req, res, next) {
     );
 
     next();
-  });
+  }).catch(next);
 }
 
 
