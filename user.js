@@ -1,7 +1,8 @@
 'use strict';
 const EventEmitter = require('events');
 const Zone = require('./zone');
-const user_timeout = 5000;//ms
+const USER_TIMEOUT = 10000;//ms
+
 class User extends EventEmitter{
   name;
   conn;
@@ -13,26 +14,28 @@ class User extends EventEmitter{
     this.conn = socket;
     this.hand.name = "Hand";
     if(this.conn){
-      this.conn.on('disconnect', () => {
-        if(this.conn&&this.conn.connected)return false;
-        this.emit('disconnect', this.name);
-      }, user_timeout);
-      this.subscribeZone(this.hand);
+      this.subscribeDefaults();
     }
     else{
       this.emit('disconnect', this.name);
     }
+  }
+  subscribeDefaults(){
+    this.conn.on('disconnect', this.beginDisconnectTimeout.bind(this));
+    this.subscribeZone(this.hand);
+  }
+  beginDisconnectTimeout(){
+    setTimeout(() => {
+      if(this.conn&&this.conn.connected)return false;
+      this.emit('disconnect', this.name);
+    }, USER_TIMEOUT)
   }
   updateSocket(socket){
     if(this.conn&&this.conn.connected){
       return false;
     }
     this.conn = socket;
-    this.conn.on('disconnect', () => {
-      if(this.conn&&this.conn.connected)return false;
-      this.emit('disconnect', this.name);
-    });
-    this.subscribeZone(this.hand);
+    this.subscribeDefaults();
     return this;
   }
   subscribeZone(zone){
