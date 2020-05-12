@@ -16,25 +16,26 @@ class Union extends EventEmitter{
     // TODO: Listen for regenerate events
     this.groups=groups;
   }
+  generateByIdx(idx){
+    const new_card = this.groups[idx].undealt;
+    if(new_card == false){
+      return false;
+    }
+    if(new_card instanceof Array){
+      for(var j=0;j<new_card.length;j++){
+        new_card[j].id = makeId(7); //TODO: Card class should auto gen this id
+        this.cards = this.cards.concat(new_card[j]);
+      }
+    }
+    else if(new_card instanceof Object){ //TODO: Make this instanceof Card
+      new_card.id = makeId(7); //TODO: Card class should auto gen this id
+      this.cards = this.cards.concat(new_card);
+    }
+  }
   generate(){
     this.cards = [];
     for(var i=0; i<this.groups.length; i++){
-      const new_card = this.groups[i].deal();
-      if(new_card == false){
-        continue;
-      }
-      if(new_card instanceof Array){
-        for(var j=0;j<new_card.length;j++){
-          new_card[j].dealt = false;
-          new_card[j].id = makeId(7); //TODO: Card class should auto gen this id
-          this.cards = this.cards.concat(new_card[j]);
-        }
-      }
-      else if(new_card instanceof Object){ //TODO: Make this instanceof Card
-        new_card.dealt = false;
-        new_card.id = makeId(7); //TODO: Card class should auto gen this id
-        this.cards = this.cards.concat(new_card);
-      }
+      this.generateByIdx(i);
     }
     this.dealt = false;
     this.emit("regenerate", "Union regenerated");
@@ -43,13 +44,11 @@ class Union extends EventEmitter{
     return this.cards.filter((item)=>item.dealt!==true);
   }
   extend(new_group){
-    if(new_group instanceof Generator){
-      this.groups.push(new_group);
-      const new_card = new_group.deal();
-      new_card.dealt = false;
-      new_card.id = makeId(7); //TODO: Card class should auto gen this id
-      this.cards = this.cards.concat(new_card);
+    if(new_group instanceof Generator || new_group instanceof Union){
+      const new_idx = this.groups.push(new_group) - 1;
+      this.generateByIdx(new_idx);
       new_group.on("regenerate", this.generate.bind(this));
+      this.emit("regenerate", "Union extended");
     }
     else if(new_group instanceof Array){
       new_group.forEach((item)=>this.extend(item));
@@ -87,11 +86,7 @@ class Duplicator extends Union{
   multiplier =0;
   constructor(groups, multiple){
     super(groups);
-    for(var i=0;i<this.groups.length;i++){
-      if(this.groups[i] instanceof Generator){
-        this.groups[i].on('regenerate', this.generate.bind(this));
-      }
-    }
+    this.multiplier = multiple;
   }
   generate(){
     this.cards = [];

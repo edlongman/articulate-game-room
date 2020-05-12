@@ -25,8 +25,8 @@ httpapp.use(express.static(__dirname+'/static',{index: 'index.html'})); // Sets 
 httpapp.use('/library', imgStore.library);
 httpapp.use('/card/create', imgStore.upload20img, function addUploaded(req, res, next){
   if(req.imageUpload){
-    var new_cards = req.files.map((item) => (new Image(item)));
-    var new_images = new_cards.map((item) => item.source);
+    var new_cards = req.files.map((item) => (new Image(item).generate()));
+    var new_images = new_cards.map((item) => item.undealt);
     res.status(201).send(new_images);
     cards = cards.concat(new_cards);
     game.emit('cards',new_cards);
@@ -38,6 +38,7 @@ var round_cards = [];
 class ChameleonGame extends EventEmitter{
   duplicator = null;
   dealer_set = null;
+  dealer_observer = new Zone();
   dice = new Dice(['A1','A2','A3','A4',
                    'B1','B2','B3','B4',
                    'C1','C2','C3','C4',
@@ -51,11 +52,23 @@ class ChameleonGame extends EventEmitter{
   constructor(){
     super();
     this.duplicator=new Duplicator([this.dice], this.players.length);
+    this.chameleon_card.generate();
     this.dealer_set = new Union([this.duplicator, this.chameleon_card]);
+    this.dealer_observer.name = "Roll cards";
+    this.dealer_observer.masked = "Hidden Dice card"
+    this.admin.subscribeZone(this.dealer_observer);
     this.play_zone = new Zone(this.feed);
     this.play_zone.name = "Topic"
     this.dealer_set.on("regenerate", (info)=>{
       game.emit("regenerate", info);
+      this.dealer_observer.flush();
+      this.dealer_observer.deal(this.dealer_set.undealt);
+    });
+    this.topic_cards.shuffle = false;
+    this.topic_cards.on("regenerate", (info)=>{
+      game.emit("regenerate", info);
+      this.admin.hand.flush();
+      this.admin.hand.deal(this.topic_cards.undealt);
     });
     this.players.subscribeZone(this.play_zone);
     this.feed.on('discard', this.players.feedDiscard.bind(this.players));
@@ -68,20 +81,22 @@ class ChameleonGame extends EventEmitter{
     this.admin.conn.on("roll",this.dice.generate.bind(this.dice));
     this.admin.conn.emit("enable_action", {id: "roll", name: "Reroll the Chameleon Dice"});
     this.admin.conn.on("deal",this.deal.bind(this));
-    this.admin.conn.emit("enable_action", {id: "deal", name: "Deal the cards to the players"});
+    this.admin.conn.emit("enable_action", {id: "deal", name: "Deal the Roll to the players"});
     this.admin.conn.on("play",this.deal_topic.bind(this));
-    this.admin.conn.emit("enable_action", {id: "play", name: "Play the first card in hand"});
+    this.admin.conn.emit("enable_action", {id: "play", name: "Play the first card Hand to Topic"});
+    this.admin.sendZone(this.dealer_observer);
     this.feed.on('discard', (card) => {
       if(card instanceof Object){// TODO: instance of "Card" class
         this.admin.conn.emit("feed",{text: "Discarded text:" + card.text + ", src: " + card.src});
       }
     });
+    this.feed.on('log', (data)=>this.admin.conn.emit("feed", data));
     this.feed.on('feed', (data)=>this.admin.conn.emit("feed", data));
     return true;
   }
   addPlayer(name, socket){
     const name_blacklist = ['', null, 'admin', 'null', 'undefined', undefined];
-    if(name_blacklist.indexOf(name)>=0){
+    if(name_blacklist.indexOf(name.toLowerCase())>=0){
       return false;
     }
     const new_player = this.players.add(name, socket);
@@ -104,6 +119,7 @@ class ChameleonGame extends EventEmitter{
     return new_player;
   }
   removePlayer(name){
+    name = String(name);
     if(this.players.removeByName(name)){
       this.feed.emit('feed', {text: name + " left the game"});
       this.duplicator.multiplier = this.players.length - 1;
@@ -124,6 +140,8 @@ class ChameleonGame extends EventEmitter{
     if(topic_card==false){
       return false;
     }
+    this.admin.hand.flush();
+    this.admin.hand.deal(this.topic_cards.undealt);
     this.play_zone.draw(topic_card);
   }
   currentPlayersString(){
@@ -138,6 +156,7 @@ function connect(socket_io){
   io.on('connection', function (socket) {
     //io.emit('feed', { text: 'hello world' });
     socket.on('join', function(name){
+      name = String(name);
       if(game.addPlayer(name, socket)){
         socket.emit('feed', {text: "User socket connected"});
       }
@@ -150,10 +169,11 @@ function connect(socket_io){
         socket.emit('feed', {text: "Admin socket connected"});
       }
       else{
-        socket.emit('kick', {text: "Could not join. Admin occupied"});
+        socket.emit('feed', {text: "Could not join. Admin occupied"});
       }
     });
     socket.on('next', function(data){
+      // TODO: validate data
       if(game.players.active&&game.players.active.conn == socket){
         // Allowed to ask for next
         throw('Unimplemented next card interface');
@@ -163,7 +183,7 @@ function connect(socket_io){
   });
 
   game.on('regenerate', function(info){
-    io.emit('feed', {text: 'Generator updated: ' + info});
+    game.feed.emit('log', {text: 'Generator updated: ' + info});
   });
 }
 

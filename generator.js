@@ -22,5 +22,10 @@ class Generator extends EventEmitter{
     }
     return this.value;
   }
+  get undealt(){
+    if(this.dealt)return false;
+    this.value.dealt = false;// TODO: this is a hack to make it always dealable
+    return this.value;
+  }
 }
 module.exports = Generator;

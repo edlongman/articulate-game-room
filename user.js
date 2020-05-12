@@ -13,15 +13,15 @@ class User extends EventEmitter{
     this.name = name;
     this.conn = socket;
     this.hand.name = "Hand";
+    this.subscribeDefaults();
     if(this.conn){
-      this.subscribeDefaults();
+      this.conn.on('disconnect', this.beginDisconnectTimeout.bind(this));
     }
     else{
       this.emit('disconnect', this.name);
     }
   }
   subscribeDefaults(){
-    this.conn.on('disconnect', this.beginDisconnectTimeout.bind(this));
     this.subscribeZone(this.hand);
   }
   beginDisconnectTimeout(){
@@ -35,21 +35,34 @@ class User extends EventEmitter{
       return false;
     }
     this.conn = socket;
-    this.subscribeDefaults();
+    this.conn.on('disconnect', this.beginDisconnectTimeout.bind(this));
+    //TODO: this is a horrible quick fix.
+    // Proper recording of connected zones required
+    // in order to automatically transmit the state
+    // when a user connects but without rebinding
+    this.sendZone(this.hand);
     return this;
+  }
+  sendZone(zone){
+    var zone_id = zone.id;
+    if(this.conn){
+      this.conn.emit("zone_new", {id: zone_id, name: zone.name, masked: zone.masked});
+      zone.cards.forEach(
+        (card)=>this.conn.emit("zone_deal", Object.assign({zone: zone_id}, card))
+      );
+    }
   }
   subscribeZone(zone){
     var zone_id = zone.id;
-    this.conn.emit("zone_new", {id: zone_id, name: zone.name});
+    this.sendZone(zone);
     zone.on("deal", (card)=>{
+      if(this.conn)
       this.conn.emit("zone_deal", Object.assign({zone: zone_id}, card));
     })
     zone.on("retrieve",(card)=>{
+      if(this.conn)
       this.conn.emit("zone_retrieve", Object.assign({zone: zone_id}, card));
     })
-    zone.cards.forEach(
-      (card)=>this.conn.emit("zone_deal", Object.assign({zone: zone_id}, card))
-    );
   }
 }
 User.prototype.kick = function(reason){

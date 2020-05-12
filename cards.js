@@ -26,6 +26,7 @@ class Dice extends Generator{
       throw Error('Unknown dice sides');
     }
     this.sides = side_values;
+    this.reusable = true;
   }
   generate(){
     this.dealt = false;

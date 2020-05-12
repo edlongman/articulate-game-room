@@ -3,6 +3,10 @@
 body{margin:40px auto;padding:0 10px;max-width:650px;
   line-height:1.6;font-size:18px;font-family:sans-serif;color:#444}
 h1,h2,h3{line-height:1.2}
+button, input, .card{
+  padding: 4px;
+  margin: 2px;
+}
 .flex_cards{
   display:flexbox;
   display:flex;
@@ -14,15 +18,13 @@ h1,h2,h3{line-height:1.2}
   width: 50%;
   max-width: 200px;
   min-width: 150px;
-  margin: 2px;
   border: 2px solid black;
-  padding: 4px;
   text-align: center;
   position: relative;
 }
 .card img{
-  max-width: 200px;
-  max-height: 200px;
+  max-width: 100%;
+  max-height: 100%;
 }</style>
 <script src="/socket.io/socket.io.js"></script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/glightbox/dist/css/glightbox.min.css">
@@ -62,6 +64,7 @@ Welcome to Chameleon, <div id="Name"></div>
     this.cards = [];
     this.id = zone_info.id;
     this.name = zone_info.name;
+    this.masked = zone_info.masked;
     var zone_area = document.createElement('div');
     zone_area.setAttribute('class', 'zone');
     zone_area.id = zone_info.id;
@@ -87,16 +90,19 @@ Welcome to Chameleon, <div id="Name"></div>
         div.appendChild(img);
         card.type = 'image';
       }
+      if(this.masked){
+        div.textContent = this.masked + ', ID:' + card.id;
+      }
       div.setAttribute('class', 'card');
       this.cards_dom.appendChild(div);
       card.dom = div;
       this.cards.push(card);
       this.gallery.setElements(this.cards);
-      for(let node of this.cards_dom.children){
-        node.addEventListener('click', (e, target)=>{
-          this.gallery.open(target);
+      this.cards.forEach((card, idx)=>{
+        card.dom.addEventListener('click', (e)=>{
+          this.gallery.open(null, idx);
         });
-      }
+      })
     }
   Zone.prototype.remove = function(card){
       var removee_idx = this.cards.map((item)=>item.id).indexOf(card.id);
@@ -105,34 +111,11 @@ Welcome to Chameleon, <div id="Name"></div>
       }
       const removee = (this.cards.splice(removee_idx, 1))[0];
       this.cards_dom.removeChild(removee.dom);
-      this.gallery.setElements(this.cards_dom.children);
+      if(this.remove(card)===false){
+        this.gallery.setElements(this.cards);
+      }
     }
   var zones = [];
-
-  var hand = [];
-  socket.on('hand_deal', function(card){
-    var div = document.createElement('div');
-    if(card.src!==undefined){
-      console.warn("Unimplemented picture card")
-    }
-    div.textContent = card.text;
-    div.setAttribute('class', 'card');
-    hand_div.appendChild(div);
-    card.dom = div;
-    hand.push(card);
-  });
-  socket.on('hand_retrieve', function(card){
-    const removee_id = hand.map((item) => item.id).indexOf(card.id);
-    if(removee_id<0){
-      return false;
-    }
-    const removee = (hand.splice(removee_id, 1))[0];
-    hand_div.removeChild(removee.dom);
-
-  });
-  socket.on('hand_flush', function(){
-    console.warn("Unimplemented");
-  });
   socket.on('zone_new', function(zone_info){
     const new_zone = new Zone(zone_info);
     document.querySelector('.zones').appendChild(new_zone.dom);
@@ -153,5 +136,5 @@ Welcome to Chameleon, <div id="Name"></div>
       return false;
     }
     zones[zone_idx].remove(card_info)
-  })
+  });
 </script>

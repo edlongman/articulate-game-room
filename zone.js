@@ -7,9 +7,13 @@ class Zone extends EventEmitter{
   cards = [];
   name = 'Zone ';
   id = makeId(7);
+  masked = false;
   draw(card){
     this.cards.push(Object.assign({},card));
     this.emit('deal', card);
+  }
+  deal(cards){
+    cards.forEach((card) => this.draw(card))
   }
   retrieve(card){
     const removee_id = this.cards.map((item) => item.id).indexOf(card.id);
@@ -20,7 +24,9 @@ class Zone extends EventEmitter{
     this.emit('retrieve', removee);
   }
   flush(){
-    this.cards.forEach(this.retrieve.bind(this));
+    for(var i=this.cards.length-1;i>=0;i--){
+      this.retrieve(this.cards[i]);
+    }
     this.emit("flush");
     const card_cache = this.cards;
     this.cards = [];
