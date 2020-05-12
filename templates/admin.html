@@ -17,6 +17,7 @@ button, input, .card{
   flex: 1;
   width: 50%;
   max-width: 200px;
+  max-height: 200px;
   min-width: 150px;
   border: 2px solid black;
   text-align: center;
@@ -35,8 +36,9 @@ var setup = { base: '{{ mountpath }}', img_lib: '{{ mountpath }}/library/' };
 <h2>
 Chameleon admin panel
 </h2>
+<div id="players"></div>
 <form class="card-upload" action="/" method="post">
-  <label for="cards">Upload up to 20 images: </label><input type="file" name="cards" accept="image/*" multiple>
+  <label for="cards">Upload cards to hand: </label><input type="file" name="cards" accept="image/*" multiple>
   <input type="submit" name="submit" value="Upload">
 </form>
 <div id="actions"></div>
@@ -61,6 +63,7 @@ Chameleon admin panel
   var socket = io(setup.base);
   var feed_div = document.getElementById("feed");
   var cards_div = document.getElementById("cards");
+  var players_div = document.getElementById("players");
   socket.emit('admin', 'admin');
   socket.on('feed', function (data) {
     console.log(data);
@@ -68,6 +71,9 @@ Chameleon admin panel
     div.textContent = data.text;
     div.setAttribute('class', 'note');
     feed_div.appendChild(div);
+  });
+  socket.on('players', function(players_string){
+    players_div.textContent = players_string;
   });
   socket.on("enable_action",function(data){
     var button = document.createElement('button');
