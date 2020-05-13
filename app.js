@@ -113,6 +113,7 @@ class ChameleonGame extends EventEmitter{
 
     //If the new_player is a user type then do the setup and subscriptions
     if(new_player instanceof User){
+      this.admin.conn.emit("players", this.currentPlayersString());
       new_player.on('disconnect', this.removePlayer.bind(this));
       new_player.subscribeZone(this.play_zone);
     }
@@ -122,6 +123,7 @@ class ChameleonGame extends EventEmitter{
     name = String(name);
     if(this.players.removeByName(name)){
       this.feed.emit('feed', {text: name + " left the game"});
+      this.admin.conn.emit("players", this.currentPlayersString());
       this.duplicator.multiplier = this.players.length - 1;
       if(this.duplicator.multiplier<0){
         this.duplicator.multiplier = 0;
@@ -145,6 +147,9 @@ class ChameleonGame extends EventEmitter{
     this.play_zone.draw(topic_card);
   }
   currentPlayersString(){
+    if(this.players.length<1){
+      return "There are no players";
+    }
     return "Current players are: " + this.players.names.join(", ");
   };
 }
