@@ -18,6 +18,7 @@ class User extends EventEmitter{
       this.conn.on('disconnect', this.beginDisconnectTimeout.bind(this));
     }
     else{
+      this.conn = new EventEmitter(); // TODO: Remove hack with Player observer class
       this.emit('disconnect', this.name);
     }
   }
