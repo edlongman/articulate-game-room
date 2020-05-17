@@ -8,7 +8,7 @@ class GeneratorBase extends EventEmitter{
   shuffle = false;
   constructor(name){
     super();
-    if(name instanceof String){
+    if(new String(name) == name){
       this.name = String(name);
     }
   }

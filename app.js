@@ -25,37 +25,34 @@ httpapp.use(express.static(__dirname+'/static',{index: 'index.html'})); // Sets 
 httpapp.use('/library', imgStore.library);
 httpapp.use('/card/create', imgStore.upload20img, function addUploaded(req, res, next){
   if(req.imageUpload){
-    var new_cards = req.files.map((item) => (new Image(item).generate()));
-    var new_images = new_cards.map((item) => item.undealt);
+    var new_cards = req.files.map((item) => (new Image("Upload", item)));
+    new_cards = new Union("Uploads", new_cards);
+    var new_images = new_cards.undealt;
     res.status(201).send(new_images);
-    cards = cards.concat(new_cards);
     game.emit('cards',new_cards);
   }
 });
 
-var cards = [];
-var round_cards = [];
 class ChameleonGame extends EventEmitter{
   duplicator = null;
   dealer_set = null;
   dealer_observer = new Zone();
-  dice = new Dice(['A1','A2','A3','A4',
+  dice = new Dice("Roller", ['A1','A2','A3','A4',
                    'B1','B2','B3','B4',
                    'C1','C2','C3','C4',
                    'D1','D2','D3','D4']);
-  chameleon_card = new Dice(['You are the chameleon']);
-  topic_cards = new Union([]);
+  chameleon_card = new Dice("Chameleoner", ['You are the chameleon']);
+  topic_cards = new Union("Topics", []);
   players = new Players();
   admin = new User("Admin", null);
   feed = new EventEmitter();
   play_zone = null;
   constructor(){
     super();
-    this.duplicator=new Duplicator([this.dice], this.players.length);
-    this.chameleon_card.generate();
-    this.dealer_set = new Union([this.duplicator, this.chameleon_card]);
+    this.duplicator=new Duplicator("Roll duplicator", [this.dice], this.players.length);
+    this.dealer_set = new Union("Role cards",[this.duplicator, this.chameleon_card]);
     this.dealer_observer.name = "Roll cards";
-    this.dealer_observer.masked = "Hidden Dice card"
+    this.dealer_observer.masked = "Hidden Dice card";
     this.admin.subscribeZone(this.dealer_observer);
     this.play_zone = new Zone(this.feed);
     this.play_zone.name = "Topic"
@@ -107,9 +104,6 @@ class ChameleonGame extends EventEmitter{
     socket.broadcast.emit('feed', { text: name + " joined the game" });
     socket.emit('feed', {text: this.currentPlayersString()});
     this.duplicator.multiplier = this.players.length - 1;
-    if(this.duplicator.multiplier<0){
-      this.duplicator.multiplier = 0;
-    }
 
     //If the new_player is a user type then do the setup and subscriptions
     if(new_player instanceof User){
@@ -125,9 +119,6 @@ class ChameleonGame extends EventEmitter{
       this.feed.emit('feed', {text: name + " left the game"});
       this.admin.conn.emit("players", this.currentPlayersString());
       this.duplicator.multiplier = this.players.length - 1;
-      if(this.duplicator.multiplier<0){
-        this.duplicator.multiplier = 0;
-      }
     }
   }
   deal(){
