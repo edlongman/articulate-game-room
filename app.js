@@ -50,7 +50,7 @@ class ChameleonGame extends EventEmitter{
   constructor(){
     super();
     this.duplicator=new Duplicator("Roll duplicator", [this.dice], this.players.length);
-    this.dealer_set = new Union("Role cards",[this.duplicator, this.chameleon_card]);
+    this.dealer_set = new Union("Role cards",[this.duplicator, this.chameleon_card], true);
     this.dealer_observer.name = "Roll cards";
     this.dealer_observer.masked = "Hidden Dice card";
     this.admin.subscribeZone(this.dealer_observer);

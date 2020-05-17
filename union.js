@@ -12,7 +12,7 @@ class Union extends GeneratorBase{
     }
     super(name);
     if(shuffle == true){
-      this.shuffle == true;
+      this.shuffle = true;
     }
     // Listen for regenerate events
     for(var i=0;i<groups.length;i++){
