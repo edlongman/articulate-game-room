@@ -1,104 +1,105 @@
 'use strict';
 const EventEmitter = require('events');
 const Generator = require('./generator');
+const GeneratorBase = require('./generator-base');
 const {getRandomInt, shuffle, makeId} = require('./gameUtil');
 // TODO: extend the generator class
-class Union extends EventEmitter{
+class Union extends GeneratorBase{
   groups = [];
-  cards = [];
-  shuffle = true;
-  dealt = false;
-  constructor(groups){
-    super();
+  constructor(name, groups, shuffle){
+    if(name==false){
+      name = "Union"
+    }
+    super(name);
+    if(shuffle == true){
+      this.shuffle == true;
+    }
+    // Listen for regenerate events
     for(var i=0;i<groups.length;i++){
       groups[i].on("regenerate", this.generate.bind(this));
     }
-    // TODO: Listen for regenerate events
     this.groups=groups;
   }
   generateByIdx(idx){
-    const new_card = this.groups[idx].undealt;
-    if(new_card == false){
-      return false;
-    }
-    if(new_card instanceof Array){
+    const new_card = this.groups[idx].getCards();
+    if(new_card instanceof Array){ // TODO: Reverse to check first method
       for(var j=0;j<new_card.length;j++){
         new_card[j].id = makeId(7); //TODO: Card class should auto gen this id
         this.cards = this.cards.concat(new_card[j]);
       }
     }
-    else if(new_card instanceof Object){ //TODO: Make this instanceof Card
-      new_card.id = makeId(7); //TODO: Card class should auto gen this id
-      this.cards = this.cards.concat(new_card);
+    else{
+      console.warn("Unknown Generator output");
     }
   }
-  generate(){
+  generate(silent){
     this.cards = [];
     for(var i=0; i<this.groups.length; i++){
       this.generateByIdx(i);
     }
-    this.dealt = false;
-    this.emit("regenerate", "Union regenerated");
-  }
-  get undealt(){
-    return this.cards.filter((item)=>item.dealt!==true);
+    // Exit early to generate without event emitting
+    if(silent == true)return this;
+    this.emit("regenerate", this.name + " regenerated");
+    return this;
   }
   extend(new_group){
-    if(new_group instanceof Generator || new_group instanceof Union){
+    if(this.cards == null){
+      this.cards = [];
+    }
+    if(new_group instanceof GeneratorBase){
       const new_idx = this.groups.push(new_group) - 1;
       this.generateByIdx(new_idx);
       new_group.on("regenerate", this.generate.bind(this));
-      this.emit("regenerate", "Union extended");
+      this.emit("regenerate", this.name + " extended");
     }
     else if(new_group instanceof Array){
       new_group.forEach((item)=>this.extend(item));
     }
     else{
-      console.warn("Unknown card type")
+      console.warn("Unknown card type");
     }
     return this;
-  }
-  draw(){//Take card
-    const undealt = this.undealt;
-    if(undealt.length<1){
-      return false;
-    }
-    var idx = 0;
-    if(this.shuffle)
-      idx = getRandomInt(0, undealt.length - 1);
-    undealt[idx].dealt=true;
-    return undealt[idx];
-  }
-  deal(){
-    const undealt = this.undealt;
-    this.dealt = true;
-    for(var i=0; i<undealt.length; i++){
-      undealt[i].dealt = true;
-    }
-    if(!this.shuffle)
-      return undealt;
-    return shuffle(undealt);
   }
 }
 exports.Union = Union;
 
 class Duplicator extends Union{
-  multiplier =0;
-  constructor(groups, multiple){
-    super(groups);
+  _multiplier = 0;
+  constructor(name, groups, shuffle, multiple){
+    if(arguments.length==3){
+      multiple = shuffle;
+      shuffle = null;
+    }
+    if(!name){
+      name = "Duplicator"
+    }
+    super(name, groups, shuffle);
     this.multiplier = multiple;
   }
-  generate(){
-    this.cards = [];
-    for(var i=0; i<this.groups.length; i++){
-      const new_card = this.groups[i].deal();
-      if(new_card instanceof Object){ //TODO: Make this instanceof Card
-        new_card.dealt=false;
+  generateByIdx(idx){ //TODO: match this structure to that of Union
+    const new_card = this.groups[idx].getCards();
+    for(var j=0;j<new_card.length;j++){
+      if(new_card instanceof Object){
         this.cards = this.cards.concat(
           Array(this.multiplier).fill(new_card));
       }
+      else{
+        console.warn("Unknown card type");
+      }
     }
     this.emit("regenerate", "Duplicator");
+  }
+  set multiplier(value){
+    if(!(Number.isFinite(value)&&Number.isInteger(value))){
+      throw Error("Can only duplicate by integer or 0");
+    }
+    if(value<0){ //Permit but correct neg integers
+      value = 0;
+    }
+    this._multiplier = value;
+  }
+  get multiplier(){
+    return this._multiplier;
   }
 }
 exports.Duplicator = Duplicator;

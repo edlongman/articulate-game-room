@@ -2,41 +2,42 @@
 const Generator = require('./generator');
 const {getRandomInt} = require('./gameUtil');
 class Image extends Generator{
-  source = null;
-  constructor(multer_file){
-    super();
-    this.source = {src:multer_file.filename};
+  constructor(name, multer_file, reusable){
+    if(reusable != true){ // Default image behaviour is non-reusable
+      reusable = false;
+    }
+    super(name, {src:multer_file.filename}, reusable);
     this.reusable = false;
   }
 
-  generate(){
-    this.dealt = false;
-    this.value  = this.source;
-    this.emit("regenerate");
+  generate(silent){
+    this.cards  = [this.source];
+    if(silent == true)return this;
+    this.emit("regenerate", this.name + " regenerated");
     return this;
   }
 }
 exports.Image = Image;
 
 class Dice extends Generator{
-  sides = [];
-  constructor(side_values){
-    super();
-    if(!(this.sides instanceof Array)){
+  constructor(name, side_values, reusable){
+    if(!(side_values instanceof Array)){
       throw Error('Unknown dice sides');
     }
-    this.sides = side_values;
-    this.reusable = true;
+    super(name, side_values, reusable);
   }
-  generate(){
-    this.dealt = false;
-    const sideCount= this.sides.length
+  generate(silent){
+    const sideCount = this.source.length;
     if(sideCount<=0){
-      this.value=null;
+      this.cards=[];
       return this;
     }
-    this.value = {text: "Dice roll: " + this.sides[getRandomInt(0, sideCount-1)]};
-    this.emit("regenerate");
+    this.cards = [{
+      text: "Dice roll: " + this.source[getRandomInt(0, sideCount-1)]
+    }];
+    // Exit early to generate without event emitting
+    if(silent == true)return this;
+    this.emit("regenerate", this.name + " regenerated");
     return this;
   }
 }
