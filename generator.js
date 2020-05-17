@@ -1,31 +1,26 @@
 'use strict';
-const EventEmitter = require('events');
-class Generator extends EventEmitter{
-  value=null;
-  dealt=false;
-  reusable = true; // TODO: Change this to not reset the reusable property on generate
-  constructor(){
-    super();
-  }
-  generate(){
-    console.warn("Unimplemented");
-  }
-  deal(){
-    if(this.dealt){
-      return false;
+const GeneratorBase = require('./generator-base');
+const silently = true;
+class Generator extends GeneratorBase{
+  reusable = true;
+  source;
+  constructor(name, source, reusable){
+    super(name);
+    // TODO: Integrity check the source?
+    this.source = source;
+    if(reusable == false){
+      this.reusable = false;
     }
-    if(this.value==null){
-      this.generate();
-    }
-    if(!this.reusable){
-      this.dealt = true;
-    }
-    return this.value;
   }
-  get undealt(){
-    if(this.dealt)return false;
-    this.value.dealt = false;// TODO: this is a hack to make it always dealable
-    return this.value;
+  getCards(){
+    if(this.cards == null){
+      this.generate(silently);
+    }
+    if(this.reusable){
+      // Return shallow copy of cards instead of originals
+      return this.cards.map((card)=>Object.assign({},card))
+    }
+    return this.cards;
   }
 }
 module.exports = Generator;
