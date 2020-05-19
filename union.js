@@ -22,14 +22,16 @@ class Union extends GeneratorBase{
   }
   generateByIdx(idx){
     const new_card = this.groups[idx].getCards();
-    if(new_card instanceof Array){ // TODO: Reverse to check first method
-      for(var j=0;j<new_card.length;j++){
-        new_card[j].id = makeId(7); //TODO: Card class should auto gen this id
-        this.cards = this.cards.concat(new_card[j]);
+    if(!(new_card instanceof Array)){
+      console.warn("Generator must give array");
+      return;
+    } // TODO: Reverse to check first method
+    for(var j=0;j<new_card.length;j++){
+      if(!(new_card instanceof Object)){
+        console.warn("Unknown card type");
+        continue;
       }
-    }
-    else{
-      console.warn("Unknown Generator output");
+      this.cards = this.cards.concat(new_card[j]);
     }
   }
   generate(silent){
@@ -77,17 +79,9 @@ class Duplicator extends Union{
     this.multiplier = multiple;
   }
   generateByIdx(idx){ //TODO: match this structure to that of Union
-    const new_card = this.groups[idx].getCards();
-    for(var j=0;j<new_card.length;j++){
-      if(new_card instanceof Object){
-        this.cards = this.cards.concat(
-          Array(this.multiplier).fill(new_card));
-      }
-      else{
-        console.warn("Unknown card type");
-      }
+    for(var i=0;i<this.multiplier;i++){
+      super.generateByIdx(idx);
     }
-    this.emit("regenerate", "Duplicator");
   }
   set multiplier(value){
     if(!(Number.isFinite(value)&&Number.isInteger(value))){

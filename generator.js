@@ -1,5 +1,6 @@
 'use strict';
 const GeneratorBase = require('./generator-base');
+const {makeId} = require('./gameUtil');
 const silently = true;
 class Generator extends GeneratorBase{
   reusable = true;
@@ -18,8 +19,12 @@ class Generator extends GeneratorBase{
     }
     if(this.reusable){
       // Return shallow copy of cards instead of originals
-      return this.cards.map((card)=>Object.assign({},card))
+      return this.cards
+        .map((card)=>Object.assign({},card)) // Shallow copy
+        .map((card)=>Object.assign(card, {id: makeId(7)})) //With new ID
     }
+    this.cards.filter((card)=>(!card.id)) //For cards without an ID
+      .map((card)=>Object.assign(card, {id: makeId(7)})) //Set a new ID
     return this.cards;
   }
 }
