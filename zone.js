@@ -8,12 +8,12 @@ class Zone extends EventEmitter{
   name = 'Zone ';
   id = makeId(7);
   masked = false;
-  draw(card){
-    this.cards.push(Object.assign({},card));
-    this.emit('deal', card);
+  add(card){
+    this.cards.push(card);
+    this.emit('add', card);
   }
   deal(cards){
-    cards.forEach((card) => this.draw(card))
+    cards.forEach((card) => this.add(card))
   }
   retrieve(card){
     const removee_id = this.cards.map((item) => item.id).indexOf(card.id);

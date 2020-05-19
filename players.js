@@ -32,7 +32,7 @@ class Players extends Array{
   }
   deal(cards){
     for(var i=0; this.length>0 && i<cards.length; i++){
-      this[i%this.length].hand.draw(cards[i]);
+      this[i%this.length].hand.add(cards[i]);
     }
   }
   emptyHands(card_dest){

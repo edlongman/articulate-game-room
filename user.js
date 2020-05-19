@@ -56,7 +56,7 @@ class User extends EventEmitter{
   subscribeZone(zone){
     var zone_id = zone.id;
     this.sendZone(zone);
-    zone.on("deal", (card)=>{
+    zone.on("add", (card)=>{
       if(this.conn)
       this.conn.emit("zone_deal", Object.assign({zone: zone_id}, card));
     })

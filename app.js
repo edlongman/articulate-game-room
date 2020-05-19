@@ -135,7 +135,7 @@ class ChameleonGame extends EventEmitter{
     }
     this.admin.hand.flush();
     this.admin.hand.deal(this.topic_cards.undealt);
-    this.play_zone.draw(topic_card);
+    this.play_zone.add(topic_card);
   }
   currentPlayersString(){
     if(this.players.length<1){
