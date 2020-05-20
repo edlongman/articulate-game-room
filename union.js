@@ -1,10 +1,10 @@
 'use strict';
 const EventEmitter = require('events');
 const Generator = require('./generator');
-const GeneratorBase = require('./generator-base');
+const Collection = require('./collection');
 const {getRandomInt, shuffle, makeId} = require('./gameUtil');
 // TODO: extend the generator class
-class Union extends GeneratorBase{
+class Union extends Collection{
   groups = [];
   constructor(name, groups, shuffle){
     if(name==false){
@@ -48,7 +48,7 @@ class Union extends GeneratorBase{
     if(this.cards == null){
       this.cards = [];
     }
-    if(new_group instanceof GeneratorBase){
+    if(new_group instanceof Collection){
       const new_idx = this.groups.push(new_group) - 1;
       this.generateByIdx(new_idx);
       new_group.on("regenerate", this.generate.bind(this));

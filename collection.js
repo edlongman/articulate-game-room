@@ -2,8 +2,8 @@
 const EventEmitter = require('events');
 const {getRandomInt, shuffle, makeId} = require('./gameUtil');
 const silently = true;
-class GeneratorBase extends EventEmitter{
-  name = "GeneratorBase";
+class Collection extends EventEmitter{
+  name = "Collection";
   cards = null;
   shuffle = false;
   constructor(name){
@@ -42,4 +42,4 @@ class GeneratorBase extends EventEmitter{
     return Object.assign(undealt[drawIdx], {dealt: true});
   }
 }
-module.exports = GeneratorBase;
+module.exports = Collection;
