@@ -31,11 +31,11 @@ class Union extends Collection{
         console.warn("Unknown card type");
         continue;
       }
-      this.cards = this.cards.concat(new_card[j]);
+      this.add(new_card[j]);
     }
   }
   generate(silent){
-    this.cards = [];
+    var removed = this.empty();
     for(var i=0; i<this.groups.length; i++){
       this.generateByIdx(i);
     }
@@ -45,9 +45,6 @@ class Union extends Collection{
     return this;
   }
   extend(new_group){
-    if(this.cards == null){
-      this.cards = [];
-    }
     if(new_group instanceof Collection){
       const new_idx = this.groups.push(new_group) - 1;
       this.generateByIdx(new_idx);
