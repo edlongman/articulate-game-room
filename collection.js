@@ -1,7 +1,6 @@
 'use strict';
 const EventEmitter = require('events');
 const {getRandomInt, shuffle, makeId} = require('./gameUtil');
-const silently = true;
 class Collection extends EventEmitter{
   name = "Collection";
   cards = null;
@@ -12,19 +11,16 @@ class Collection extends EventEmitter{
       this.name = String(name);
     }
   }
-  generate(){
-    console.warn("Unimplemented");
-  }
   add(card){
     if(this.cards == null){
       this.cards = [];
     }
     if(card instanceof Array){
-      this.cards = this.cards.concat(card);
+      card.forEach((item)=>this.add(item));
     }
     else{
       this.cards.push(card);
-      this.emit('add', [card]);
+      this.emit('add', card);
     }
   }
   remove(card){
@@ -45,10 +41,7 @@ class Collection extends EventEmitter{
     return removed;
   }
   getCards(){
-    if(this.cards == null){
-      this.generate(silently);
-    }
-    return this.cards;
+    return this.cards || [];
   }
   get undealt(){
     return this.getCards().filter((item)=>item.dealt!==true);

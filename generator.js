@@ -13,6 +13,9 @@ class Generator extends Collection{
       this.reusable = false;
     }
   }
+  generate(){
+    console.warn("Unimplemented");
+  }
   getCards(){
     if(this.cards == null){
       this.generate(silently);

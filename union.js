@@ -3,6 +3,7 @@ const EventEmitter = require('events');
 const Generator = require('./generator');
 const Collection = require('./collection');
 const {getRandomInt, shuffle, makeId} = require('./gameUtil');
+const silently = true;
 // TODO: extend the generator class
 class Union extends Collection{
   groups = [];
@@ -11,6 +12,9 @@ class Union extends Collection{
       name = "Union"
     }
     super(name);
+    if(!(groups instanceof Array)){
+      groups = [];
+    }
     if(shuffle == true){
       this.shuffle = true;
     }
@@ -43,6 +47,12 @@ class Union extends Collection{
     if(silent == true)return this;
     this.emit("regenerate", this.name + " regenerated");
     return this;
+  }
+  getCards(){
+    if(this.cards == null){
+      this.generate(silently);
+    }
+    return this.cards || [];
   }
   extend(new_group){
     if(new_group instanceof Collection){
