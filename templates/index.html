@@ -2,129 +2,33 @@
 <style>
 body{margin:40px auto;padding:0 10px;max-width:650px;
   line-height:1.6;font-size:18px;font-family:sans-serif;color:#444}
-h1,h2,h3{line-height:1.2}
-button, input, .card{
-  padding: 4px;
-  margin: 2px;
-}
-.flex_cards{
-  display:flexbox;
-  display:flex;
-  position: relative;
-  flex-wrap: wrap;
-}
-.card{
-  flex: 1;
-  width: 50%;
-  max-width: 200px;
-  max-height: 200px;
-  min-width: 150px;
-  border: 2px solid black;
-  text-align: center;
-  position: relative;
-}
-.card img{
-  max-width: 100%;
-  max-height: 100%;
-}</style>
-<script src="/socket.io/socket.io.js"></script>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/glightbox/dist/css/glightbox.min.css">
-<script src="https://cdn.jsdelivr.net/gh/mcstudios/glightbox/dist/js/glightbox.min.js"></script>
+h1,h2,h3{line-height:1.2}</style>
 <script>
 var setup = { base: '{{ mountpath }}', img_lib: '{{ mountpath }}/library/', gameId:'{{ gameId }}'  };
 </script>
+
 <h2>
-Welcome to Chameleon, <span id="username"></span>. Game <span id="gameId"></span>
+Welcome to Chameleon Game Room
 </h2>
-<div id="actions">
-  <form id="joinGame" class="join-game" action="/" method="post">
-    <label for="game_id">Game ID:</label><input type="text" name="game_id">
-    <input type="submit" name="submit" value="GO!">
-  </form>
-</div>
-<div class="zones"></div>
-<div id="hand" class="flex_cards"></div>
-<div id="feed"></div>
-<script type="text/javascript">
-  if( typeof Element.prototype.clearChildren === 'undefined' ) {
-    // Monkey fill from https://stackoverflow.com/questions/3955229/remove-all-child-elements-of-a-dom-node-in-javascript
-    Object.defineProperty(Element.prototype, 'clearChildren', {
-      configurable: true,
-      enumerable: false,
-      value: function() {
-        while(this.firstChild) this.removeChild(this.lastChild)
-      }
-    });
-  }
-</script>
-<script src="{{ mountpath }}/clientZone.js"></script>
-<script>
-  var socket = io(setup.base);
-  var feed_div = document.getElementById("feed");
-  var hand_div = document.getElementById("hand");
-  var name_res = window.prompt("What's your name", "");
-  socket.emit('user', name_res);
-  const uname_span = document.getElementById("username");
-  uname_span.textContent = name_res;
-  function joinGame(id){
-    socket.emit('join', id || null, function(gameId){
-      const game_id = document.getElementById("gameId");
-      game_id.textContent = gameId;
-      setup.gameId = gameId;
-      window.history.pushState(setup, "Game " + gameId, setup.base + "/play/" + gameId);
-      document.getElementById('actions').clearChildren();
-    });
-  }
-  if(setup.gameId){
-    joinGame(setup.gameId);
-  }
-  document.getElementById('joinGame').addEventListener('submit',
-    function submitGameId(ev){
-      ev.preventDefault();
-      const gameIdInput = this.querySelector('[name="game_id"]');
-      const gameIdSubmit = this.querySelector('[name="submit"]');
-      joinGame(gameIdInput.value);
-      gameIdInput.setAttribute('disabled', true)
-      gameIdSubmit.setAttribute('disabled', true);
-      setTimeout(function(input, submit){
-        input.removeAttribute('disabled')
-        submit.removeAttribute('disabled');
-      }, 500, gameIdInput, gameIdSubmit);
-    });
-  socket.on('feed', function (data) {
-    console.log(data);
-    var div = document.createElement('div');
-    div.textContent = data.text;
-    div.setAttribute('class', 'note');
-    feed_div.appendChild(div);
-  });
-  socket.on('kick', function (data) {
-    console.log(data);
-    var div = document.createElement('div');
-    div.textContent = data.text;
-    div.setAttribute('class', 'note warn');
-    feed_div.appendChild(div);
-  });
-  var zones = [];
-  socket.on('zone_new', function(zone_info){
-    const new_zone = new Zone(zone_info);
-    document.querySelector('.zones').appendChild(new_zone.dom);
+<a href="{{ mountpath }}/play">Join an existing game (with 5 character ID)</a>
+<br/>
+<a href="{{ mountpath }}/admin">Start a new Game as Admin</a>
+<h3>What is this</h3>
+This is a small app to play <a href="https://bigpotato.com/gb/games/the-chameleon/">The Chameleon</a>.
+The Admin needs a copy of the game to be able to upload cards to their "Hand".
+Other users can join with a game ID or from a link available in the Admin view.
 
-    zones.push(new_zone);
+<h3>Mechanics</h3>
+The Admin is able to upload topic cards (png or jpeg) which appear in their hand.
+They can then deal the first in their "Hand" to the players' "Topic" zone.
+<br/>
+The Admin can also generate "Dice Rolls".
+This consists of 1x"You are the chameleon" card + (players-1)x"Dice roll is...".
+The dice roll references a square on the topic grid.
+These can then be dealt to the players' hand.
+<br/>
+This is all!
 
-  });
-  socket.on('zone_deal', function(card_info){
-    var zone_idx = zones.map((item) => item.id).indexOf(card_info.zone);
-    if(zone_idx<0){
-      return false;
-    }
-    zones[zone_idx].add(card_info);
-  });
-  socket.on('zone_retrieve', function(card_info){
-    var zone_idx = zones.map((item) => item.id).indexOf(card_info.zone);
-    if(zone_idx<0){
-      return false;
-    }
-    zones[zone_idx].remove(card_info)
-  });
-</script>
+<h3>How is is made?</h3>
+This app is made using Node.js + express + socket.io and hours of <a href="http://elongman.uk/">Ed Longman's</a> time.
+You can check out the code on <a href="https://github.com/edlongman/articulate-game-room/">GitHub</a>.

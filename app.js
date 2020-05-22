@@ -57,12 +57,12 @@ var manager = new GameManager();
 httpapp.get('/', async function(req, res){
   res.send(env.render('index.html', {mountpath: req.baseUrl, gameId: ''}));
 });
-httpapp.get('/play/:gameId', async function(req, res){
+httpapp.get('/play/:gameId?', async function(req, res){
   var gameId = '';
   if(req.params.gameId&&req.params.gameId.length<10){
     gameId = req.params.gameId;
   }
-  res.send(env.render('index.html', {mountpath: req.baseUrl, gameId: gameId}));
+  res.send(env.render('play.html', {mountpath: req.baseUrl, gameId: gameId}));
 });
 httpapp.get('/admin/:gameId?', async function(req, res){
   var gameId = '';

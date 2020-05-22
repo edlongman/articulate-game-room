@@ -1,2 +1,3 @@
 # articulate-game-room
-Take photos of articulate cards then broadcast to a player
+Currently just for playing Chameleon. May be extended for games like Articulate and Linkee in future.
+See `templates/index.html` for usage instructions.

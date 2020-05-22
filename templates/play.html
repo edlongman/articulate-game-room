@@ -1,0 +1,130 @@
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+body{margin:40px auto;padding:0 10px;max-width:650px;
+  line-height:1.6;font-size:18px;font-family:sans-serif;color:#444}
+h1,h2,h3{line-height:1.2}
+button, input, .card{
+  padding: 4px;
+  margin: 2px;
+}
+.flex_cards{
+  display:flexbox;
+  display:flex;
+  position: relative;
+  flex-wrap: wrap;
+}
+.card{
+  flex: 1;
+  width: 50%;
+  max-width: 200px;
+  max-height: 200px;
+  min-width: 150px;
+  border: 2px solid black;
+  text-align: center;
+  position: relative;
+}
+.card img{
+  max-width: 100%;
+  max-height: 100%;
+}</style>
+<script src="/socket.io/socket.io.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/glightbox/dist/css/glightbox.min.css">
+<script src="https://cdn.jsdelivr.net/gh/mcstudios/glightbox/dist/js/glightbox.min.js"></script>
+<script>
+var setup = { base: '{{ mountpath }}', img_lib: '{{ mountpath }}/library/', gameId:'{{ gameId }}'  };
+</script>
+<h2>
+Welcome to Chameleon, <span id="username"></span>. Game <span id="gameId">??</span>
+</h2>
+<div id="actions">
+  <form id="joinGame" class="join-game" action="/" method="post">
+    <label for="game_id">Game ID:</label><input type="text" name="game_id">
+    <input type="submit" name="submit" value="GO!">
+  </form>
+</div>
+<div class="zones"></div>
+<div id="hand" class="flex_cards"></div>
+<div id="feed"></div>
+<script type="text/javascript">
+  if( typeof Element.prototype.clearChildren === 'undefined' ) {
+    // Monkey fill from https://stackoverflow.com/questions/3955229/remove-all-child-elements-of-a-dom-node-in-javascript
+    Object.defineProperty(Element.prototype, 'clearChildren', {
+      configurable: true,
+      enumerable: false,
+      value: function() {
+        while(this.firstChild) this.removeChild(this.lastChild)
+      }
+    });
+  }
+</script>
+<script src="{{ mountpath }}/clientZone.js"></script>
+<script>
+  var socket = io(setup.base);
+  var feed_div = document.getElementById("feed");
+  var hand_div = document.getElementById("hand");
+  var name_res = window.prompt("What's your name", "");
+  socket.emit('user', name_res);
+  const uname_span = document.getElementById("username");
+  uname_span.textContent = name_res;
+  function joinGame(id){
+    socket.emit('join', id || null, function(gameId){
+      const game_id = document.getElementById("gameId");
+      game_id.textContent = gameId;
+      setup.gameId = gameId;
+      window.history.pushState(setup, "Game " + gameId, setup.base + "/play/" + gameId);
+      document.getElementById('actions').clearChildren();
+    });
+  }
+  if(setup.gameId){
+    joinGame(setup.gameId);
+  }
+  document.getElementById('joinGame').addEventListener('submit',
+    function submitGameId(ev){
+      ev.preventDefault();
+      const gameIdInput = this.querySelector('[name="game_id"]');
+      const gameIdSubmit = this.querySelector('[name="submit"]');
+      joinGame(gameIdInput.value);
+      gameIdInput.setAttribute('disabled', true)
+      gameIdSubmit.setAttribute('disabled', true);
+      setTimeout(function(input, submit){
+        input.removeAttribute('disabled')
+        submit.removeAttribute('disabled');
+      }, 500, gameIdInput, gameIdSubmit);
+    });
+  socket.on('feed', function (data) {
+    console.log(data);
+    var div = document.createElement('div');
+    div.textContent = data.text;
+    div.setAttribute('class', 'note');
+    feed_div.appendChild(div);
+  });
+  socket.on('kick', function (data) {
+    console.log(data);
+    var div = document.createElement('div');
+    div.textContent = data.text;
+    div.setAttribute('class', 'note warn');
+    feed_div.appendChild(div);
+  });
+  var zones = [];
+  socket.on('zone_new', function(zone_info){
+    const new_zone = new Zone(zone_info);
+    document.querySelector('.zones').appendChild(new_zone.dom);
+
+    zones.push(new_zone);
+
+  });
+  socket.on('zone_deal', function(card_info){
+    var zone_idx = zones.map((item) => item.id).indexOf(card_info.zone);
+    if(zone_idx<0){
+      return false;
+    }
+    zones[zone_idx].add(card_info);
+  });
+  socket.on('zone_retrieve', function(card_info){
+    var zone_idx = zones.map((item) => item.id).indexOf(card_info.zone);
+    if(zone_idx<0){
+      return false;
+    }
+    zones[zone_idx].remove(card_info)
+  });
+</script>

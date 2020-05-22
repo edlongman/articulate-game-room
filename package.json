@@ -1,6 +1,6 @@
 {
   "name": "articulate-game-room",
-  "version": "0.2.2",
+  "version": "1.0.0-rc1",
   "description": "",
   "main": "app.js",
   "scripts": {
