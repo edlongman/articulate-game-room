@@ -1,7 +1,20 @@
-
-exports.makeId = function makeId(length) {
+let letterFreqCount = str => {
+  return str.split('').reduce((total, letter) => {
+    total[letter] ? total[letter]++ : total[letter] = 1;
+    return total;
+  }, {});
+};
+exports.makeId = function makeId(length, customChars) {
    var result           = '';
    var characters       = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+   if(typeof(customChars)!='undefined'&&
+        (typeof customChars === 'string' || customChars instanceof String)&&
+        customChars.length>1){
+     if(Object.keys(letterFreqCount(customChars)).length<15){
+       console.warn("Few chars in makeId reduces uniqueness");
+     }
+     characters = customChars;
+   }
    var charactersLength = characters.length;
    for ( var i = 0; i < length; i++ ) {
       result += characters.charAt(Math.floor(Math.random() * charactersLength));

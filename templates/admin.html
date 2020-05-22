@@ -31,10 +31,10 @@ button, input, .card{
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/glightbox/dist/css/glightbox.min.css">
 <script src="https://cdn.jsdelivr.net/gh/mcstudios/glightbox/dist/js/glightbox.min.js"></script>
 <script>
-var setup = { base: '{{ mountpath }}', img_lib: '{{ mountpath }}/library/' };
+var setup = { base: '{{ mountpath }}', img_lib: '{{ mountpath }}/library/', gameId:'{{ gameId }}' };
 </script>
 <h2>
-Chameleon admin panel
+Chameleon admin. <span id="gameId"></span>
 </h2>
 <div id="players"></div>
 <form class="card-upload" action="/" method="post">
@@ -66,11 +66,31 @@ Chameleon admin panel
   var cards_div = document.getElementById("cards");
   var players_div = document.getElementById("players");
   socket.emit('admin', 'admin');
+  function joinGame(id){
+    socket.emit('join', id || null, function(gameId){
+      const game_id = document.getElementById("gameId");
+      const game_link = document.createElement("a");
+      game_link.setAttribute('href', setup.base + '/play/' + gameId);
+      game_link.setAttribute('target', '_blank');
+      game_link.textContent = 'Share ID: ' + gameId;
+      game_id.appendChild(game_link);
+      setup.gameId = gameId;
+      window.history.pushState(setup, "Game " + gameId, setup.base + "/admin/" + gameId);
+    });
+  }
+  joinGame(setup.gameId);
   socket.on('feed', function (data) {
     console.log(data);
     var div = document.createElement('div');
     div.textContent = data.text;
     div.setAttribute('class', 'note');
+    feed_div.appendChild(div);
+  });
+  socket.on('kick', function (data) {
+    console.log(data);
+    var div = document.createElement('div');
+    div.textContent = data.text;
+    div.setAttribute('class', 'note warn');
     feed_div.appendChild(div);
   });
   socket.on('players', function(players_string){
@@ -114,6 +134,7 @@ Chameleon admin panel
       for(var i=0; i<card_input.files.length; i++){
         submit_data.append('cards', card_input.files[i]);
       }
+      submit_data.append('game_id', setup.gameId);
       fetch(setup.base + '/card/create', {
         method: 'POST',
         body: submit_data

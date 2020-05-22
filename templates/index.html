@@ -31,21 +31,66 @@ button, input, .card{
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/glightbox/dist/css/glightbox.min.css">
 <script src="https://cdn.jsdelivr.net/gh/mcstudios/glightbox/dist/js/glightbox.min.js"></script>
 <script>
-var setup = { base: '{{ mountpath }}', img_lib: '{{ mountpath }}/library/' };
+var setup = { base: '{{ mountpath }}', img_lib: '{{ mountpath }}/library/', gameId:'{{ gameId }}'  };
 </script>
 <h2>
-Welcome to Chameleon, <div id="Name"></div>
+Welcome to Chameleon, <span id="username"></span>. Game <span id="gameId"></span>
 </h2>
+<div id="actions">
+  <form id="joinGame" class="join-game" action="/" method="post">
+    <label for="game_id">Game ID:</label><input type="text" name="game_id">
+    <input type="submit" name="submit" value="GO!">
+  </form>
+</div>
 <div class="zones"></div>
 <div id="hand" class="flex_cards"></div>
 <div id="feed"></div>
+<script type="text/javascript">
+  if( typeof Element.prototype.clearChildren === 'undefined' ) {
+    // Monkey fill from https://stackoverflow.com/questions/3955229/remove-all-child-elements-of-a-dom-node-in-javascript
+    Object.defineProperty(Element.prototype, 'clearChildren', {
+      configurable: true,
+      enumerable: false,
+      value: function() {
+        while(this.firstChild) this.removeChild(this.lastChild)
+      }
+    });
+  }
+</script>
 <script src="{{ mountpath }}/clientZone.js"></script>
 <script>
   var socket = io(setup.base);
   var feed_div = document.getElementById("feed");
   var hand_div = document.getElementById("hand");
   var name_res = window.prompt("What's your name", "");
-  socket.emit('join', name_res);
+  socket.emit('user', name_res);
+  const uname_span = document.getElementById("username");
+  uname_span.textContent = name_res;
+  function joinGame(id){
+    socket.emit('join', id || null, function(gameId){
+      const game_id = document.getElementById("gameId");
+      game_id.textContent = gameId;
+      setup.gameId = gameId;
+      window.history.pushState(setup, "Game " + gameId, setup.base + "/play/" + gameId);
+      document.getElementById('actions').clearChildren();
+    });
+  }
+  if(setup.gameId){
+    joinGame(setup.gameId);
+  }
+  document.getElementById('joinGame').addEventListener('submit',
+    function submitGameId(ev){
+      ev.preventDefault();
+      const gameIdInput = this.querySelector('[name="game_id"]');
+      const gameIdSubmit = this.querySelector('[name="submit"]');
+      joinGame(gameIdInput.value);
+      gameIdInput.setAttribute('disabled', true)
+      gameIdSubmit.setAttribute('disabled', true);
+      setTimeout(function(input, submit){
+        input.removeAttribute('disabled')
+        submit.removeAttribute('disabled');
+      }, 500, gameIdInput, gameIdSubmit);
+    });
   socket.on('feed', function (data) {
     console.log(data);
     var div = document.createElement('div');
@@ -57,7 +102,7 @@ Welcome to Chameleon, <div id="Name"></div>
     console.log(data);
     var div = document.createElement('div');
     div.textContent = data.text;
-    div.setAttribute('class', 'note');
+    div.setAttribute('class', 'note warn');
     feed_div.appendChild(div);
   });
   var zones = [];
