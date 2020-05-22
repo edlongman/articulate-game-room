@@ -75,7 +75,8 @@ class Duplicator extends Union{
     super(name, groups, shuffle);
     this.multiplier = multiple;
   }
-  generateByIdx(idx){ //TODO: match this structure to that of Union
+  generateByIdx(idx){
+    this.add([]); //Force this cards to be instansiated if multiplier = 0;
     for(var i=0;i<this.multiplier;i++){
       super.generateByIdx(idx);
     }

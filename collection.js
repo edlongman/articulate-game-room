@@ -41,6 +41,7 @@ class Collection extends EventEmitter{
     while(this.cards && this.cards.length>0){
       removed.push(this.remove(this.cards[this.cards.length-1]));
     }
+    this.emit("flush");
     return removed;
   }
   getCards(){
@@ -57,7 +58,9 @@ class Collection extends EventEmitter{
     if(this.shuffle){
       candidates = shuffle(candidates);
     }
-    return candidates.map((card)=>Object.assign(card, {dealt: true}))
+    return candidates.map((card)=>
+      Object.assign(this.remove(card), {dealt: true})
+    );
   }
   draw(){//Take card
     const undealt = this.undealt;
@@ -67,7 +70,7 @@ class Collection extends EventEmitter{
     var drawIdx = 0;
     if(this.shuffle)
       drawIdx = getRandomInt(0, undealt.length - 1);
-    return Object.assign(undealt[drawIdx], {dealt: true});
+    return Object.assign(this.remove(undealt[drawIdx]), {dealt: true});
   }
 }
 module.exports = Collection;

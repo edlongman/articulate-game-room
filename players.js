@@ -37,7 +37,7 @@ class Players extends Array{
   }
   emptyHands(card_dest){
     this.forEach((user)=>{
-      const discarded = user.hand.flush();
+      const discarded = user.hand.empty();
       for(var j=0;j<discarded.length;j++){
         card_dest.emit('discard', discarded[j]);
       }

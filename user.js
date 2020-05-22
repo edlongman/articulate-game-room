@@ -1,18 +1,18 @@
 'use strict';
 const EventEmitter = require('events');
 const Zone = require('./zone');
+const Collection = require('./collection');
 const USER_TIMEOUT = 10000;//ms
 
 class User extends EventEmitter{
   name;
   conn;
-  hand = new Zone;
+  hand = new Zone(new Collection("Hand"));
 
   constructor(name, socket){
     super();
     this.name = name;
     this.conn = socket;
-    this.hand.name = "Hand";
     this.subscribeDefaults();
     if(this.conn){
       this.conn.on('disconnect', this.beginDisconnectTimeout.bind(this));
@@ -48,7 +48,7 @@ class User extends EventEmitter{
     var zone_id = zone.id;
     if(this.conn){
       this.conn.emit("zone_new", {id: zone_id, name: zone.name, masked: zone.masked});
-      zone.cards.forEach(
+      zone.getCards().forEach(
         (card)=>this.conn.emit("zone_deal", Object.assign({zone: zone_id}, card))
       );
     }
