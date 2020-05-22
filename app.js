@@ -4,6 +4,7 @@ const {makeId, shuffle, getRandomInt} = require('./gameUtil');
 const imgStore = require('./imageStore');
 const User = require('./user');
 const Zone = require('./zone');
+const Collection = require('./collection');
 const Players = require('./players');
 const EventEmitter = require('events');
 const {Image, Dice} = require('./cards')
@@ -42,7 +43,7 @@ class ChameleonGame extends EventEmitter{
                    'C1','C2','C3','C4',
                    'D1','D2','D3','D4']);
   chameleon_card = new Dice("Chameleoner", ['You are the chameleon']);
-  topic_cards = new Union("Topics", []);
+  topic_cards = new Zone(new Union("Topics"));
   players = new Players();
   admin = new User("Admin", null);
   feed = new EventEmitter();
@@ -51,22 +52,15 @@ class ChameleonGame extends EventEmitter{
     super();
     this.duplicator=new Duplicator("Roll duplicator", [this.dice], this.players.length);
     this.dealer_set = new Union("Role cards",[this.duplicator, this.chameleon_card], true);
-    this.dealer_observer.name = "Roll cards";
+    this.dealer_observer = new Zone(this.dealer_set);
     this.dealer_observer.masked = "Hidden Dice card";
     this.admin.subscribeZone(this.dealer_observer);
-    this.play_zone = new Zone(this.feed);
-    this.play_zone.name = "Topic"
+    this.play_zone = new Zone(new Collection("Topic"));
     this.dealer_set.on("regenerate", (info)=>{
       game.emit("regenerate", info);
-      this.dealer_observer.flush();
-      this.dealer_observer.deal(this.dealer_set.undealt);
     });
-    this.topic_cards.shuffle = false;
-    this.topic_cards.on("regenerate", (info)=>{
-      game.emit("regenerate", info);
-      this.admin.hand.flush();
-      this.admin.hand.deal(this.topic_cards.undealt);
-    });
+    this.admin.hand = this.topic_cards;
+    this.admin.subscribeDefaults(); // TODO: User.changeHand(new collection)
     this.players.subscribeZone(this.play_zone);
     this.feed.on('discard', this.players.feedDiscard.bind(this.players));
     this.on('cards', this.topic_cards.extend.bind(this.topic_cards));
@@ -126,16 +120,12 @@ class ChameleonGame extends EventEmitter{
     this.players.deal(this.dealer_set.deal());
   }
   deal_topic(){
-    while(this.play_zone.cards.length>0){
-      this.play_zone.retrieve(this.play_zone.cards[0]);
-    }
+    this.play_zone.empty();
     const topic_card = this.topic_cards.draw();
     if(topic_card==false){
       return false;
     }
-    this.admin.hand.flush();
-    this.admin.hand.deal(this.topic_cards.undealt);
-    this.play_zone.draw(topic_card);
+    this.play_zone.add(topic_card);
   }
   currentPlayersString(){
     if(this.players.length<1){

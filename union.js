@@ -1,16 +1,20 @@
 'use strict';
 const EventEmitter = require('events');
 const Generator = require('./generator');
-const GeneratorBase = require('./generator-base');
+const Collection = require('./collection');
 const {getRandomInt, shuffle, makeId} = require('./gameUtil');
+const silently = true;
 // TODO: extend the generator class
-class Union extends GeneratorBase{
+class Union extends Collection{
   groups = [];
   constructor(name, groups, shuffle){
     if(name==false){
       name = "Union"
     }
     super(name);
+    if(!(groups instanceof Array)){
+      groups = [];
+    }
     if(shuffle == true){
       this.shuffle = true;
     }
@@ -31,11 +35,11 @@ class Union extends GeneratorBase{
         console.warn("Unknown card type");
         continue;
       }
-      this.cards = this.cards.concat(new_card[j]);
+      this.add(new_card[j]);
     }
   }
   generate(silent){
-    this.cards = [];
+    var removed = this.empty();
     for(var i=0; i<this.groups.length; i++){
       this.generateByIdx(i);
     }
@@ -44,11 +48,14 @@ class Union extends GeneratorBase{
     this.emit("regenerate", this.name + " regenerated");
     return this;
   }
-  extend(new_group){
+  getCards(){
     if(this.cards == null){
-      this.cards = [];
+      this.generate(silently);
     }
-    if(new_group instanceof GeneratorBase){
+    return this.cards || [];
+  }
+  extend(new_group){
+    if(new_group instanceof Collection){
       const new_idx = this.groups.push(new_group) - 1;
       this.generateByIdx(new_idx);
       new_group.on("regenerate", this.generate.bind(this));
@@ -78,7 +85,8 @@ class Duplicator extends Union{
     super(name, groups, shuffle);
     this.multiplier = multiple;
   }
-  generateByIdx(idx){ //TODO: match this structure to that of Union
+  generateByIdx(idx){
+    this.add([]); //Force this cards to be instansiated if multiplier = 0;
     for(var i=0;i<this.multiplier;i++){
       super.generateByIdx(idx);
     }

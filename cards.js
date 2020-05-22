@@ -11,7 +11,8 @@ class Image extends Generator{
   }
 
   generate(silent){
-    this.cards  = [this.source];
+    this.empty();
+    this.add(this.source);
     if(silent == true)return this;
     this.emit("regenerate", this.name + " regenerated");
     return this;
@@ -28,13 +29,13 @@ class Dice extends Generator{
   }
   generate(silent){
     const sideCount = this.source.length;
+    this.empty();
     if(sideCount<=0){
-      this.cards=[];
       return this;
     }
-    this.cards = [{
+    this.add([{
       text: "Dice roll: " + this.source[getRandomInt(0, sideCount-1)]
-    }];
+    }]);
     // Exit early to generate without event emitting
     if(silent == true)return this;
     this.emit("regenerate", this.name + " regenerated");

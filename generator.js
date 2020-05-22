@@ -1,8 +1,8 @@
 'use strict';
-const GeneratorBase = require('./generator-base');
+const Collection = require('./collection');
 const {makeId} = require('./gameUtil');
 const silently = true;
-class Generator extends GeneratorBase{
+class Generator extends Collection{
   reusable = true;
   source;
   constructor(name, source, reusable){
@@ -12,6 +12,9 @@ class Generator extends GeneratorBase{
     if(reusable == false){
       this.reusable = false;
     }
+  }
+  generate(){
+    console.warn("Unimplemented");
   }
   getCards(){
     if(this.cards == null){

@@ -32,12 +32,12 @@ class Players extends Array{
   }
   deal(cards){
     for(var i=0; this.length>0 && i<cards.length; i++){
-      this[i%this.length].hand.draw(cards[i]);
+      this[i%this.length].hand.add(cards[i]);
     }
   }
   emptyHands(card_dest){
     this.forEach((user)=>{
-      const discarded = user.hand.flush();
+      const discarded = user.hand.empty();
       for(var j=0;j<discarded.length;j++){
         card_dest.emit('discard', discarded[j]);
       }
