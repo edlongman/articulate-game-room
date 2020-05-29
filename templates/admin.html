@@ -88,9 +88,7 @@ Chameleon admin. <span id="gameId"></span>
   socket.on('connect', function(){
     socket.emit('admin', 'admin');
     joinRetryBackoff = 1000;
-    if(setup.gameId){
-      joinGame(setup.gameId);
-    }
+    joinGame(setup.gameId);
   });
   socket.on('feed', function (data) {
     console.log(data);

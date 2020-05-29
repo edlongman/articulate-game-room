@@ -161,9 +161,6 @@ function connect(socket_io){
           socket.emit('kick', {text: "Could not join. Admin occupied"});
           return;
         }
-        game.on('regenerate', function(info){ //TODO: move to ChameleonGame
-          game.feed.emit('log', {text: 'Generator updated: ' + info});
-        });
       });
     });
 
