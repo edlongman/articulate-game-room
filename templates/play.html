@@ -59,11 +59,10 @@ Welcome to Chameleon, <span id="username"></span>. Game <span id="gameId">??</sp
 </script>
 <script src="{{ mountpath }}/clientZone.js"></script>
 <script>
-  var socket = io(setup.base);
+  var socket = io(setup.base, {timeout: 10000});
   var feed_div = document.getElementById("feed");
   var hand_div = document.getElementById("hand");
   var name_res = window.prompt("What's your name", "");
-  socket.emit('user', name_res);
   const uname_span = document.getElementById("username");
   uname_span.textContent = name_res;
   function joinGame(id){
@@ -73,14 +72,27 @@ Welcome to Chameleon, <span id="username"></span>. Game <span id="gameId">??</sp
       setup.gameId = gameId;
       window.history.pushState(setup, "Game " + gameId, setup.base + "/play/" + gameId);
       document.getElementById('actions').clearChildren();
+      document.getElementById('zones').clearChildren();
+      clearTimeout(joinRetryTimer);
     });
   }
-  if(setup.gameId){
-    joinGame(setup.gameId);
   }
+  socket.on('connect', function(){
+    socket.emit('user', name_res);
+    if(setup.gameId){
+      joinGame(setup.gameId);
+    }
+  });
+  socket.on('reconnect', function(){
+    socket.emit('user', name_res);
+    if(setup.gameId){
+      joinGame(setup.gameId);
+    }
+  });
   document.getElementById('joinGame').addEventListener('submit',
     function submitGameId(ev){
       ev.preventDefault();
+      socket.emit('user', name_res);
       const gameIdInput = this.querySelector('[name="game_id"]');
       const gameIdSubmit = this.querySelector('[name="submit"]');
       joinGame(gameIdInput.value);
@@ -98,12 +110,21 @@ Welcome to Chameleon, <span id="username"></span>. Game <span id="gameId">??</sp
     div.setAttribute('class', 'note');
     feed_div.appendChild(div);
   });
+  var joinRetryBackoff = 5000;
+  var joinRetryTimer = null;
   socket.on('kick', function (data) {
     console.log(data);
     var div = document.createElement('div');
-    div.textContent = data.text;
+    div.textContent = data.text + " Retrying in: "+ 5000/1000 + "s";
     div.setAttribute('class', 'note warn');
     feed_div.appendChild(div);
+    clearTimeout(joinRetryTimer);
+    joinRetryTimer = setTimeout(function(){
+      if(setup.gameId){
+        joinGame(setup.gameId);
+      }
+    },joinRetryBackoff);
+    joinRetryBackoff*1.2;
   });
   var zones = [];
   socket.on('zone_new', function(zone_info){
