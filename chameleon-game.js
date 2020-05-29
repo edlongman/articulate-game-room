@@ -32,6 +32,9 @@ class ChameleonGame extends EventEmitter{
     this.dealer_set.on("regenerate", (info)=>{
       this.emit("regenerate", info);
     });
+    this.on('regenerate', (info)=>{ 
+      this.feed.emit('log', {text: 'Generator updated: ' + info});
+    });
     this.admin.hand = this.topic_cards;
     this.admin.subscribeDefaults(); // TODO: User.changeHand(new collection)
     this.players.subscribeZone(this.play_zone);
