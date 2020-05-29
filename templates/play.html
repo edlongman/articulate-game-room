@@ -80,6 +80,33 @@ Welcome to Chameleon, <span id="username"></span>. Game <span id="gameId">??</sp
       clearTimeout(joinRetryTimer);
     });
   }
+  class connectionManager{
+    constructor(socket, dom_location){
+      this.socket = socket;
+      this.dom_location = dom_location;
+      this.retry_timeout = null;
+      this.retry_backoff = 5000;
+      socket.on('connect', function(){
+        setConnected();
+      })
+    }
+    setConnected(){
+      this.retry_backoff = 5000;
+      //TODO: Set connected message
+    }
+    setDisconnected(){
+      //TODO: Set disconnected message
+    }
+    tryJoinGame(){
+      clearTimeout(this.retry_timeout);
+      this.retry_timeout = setTimeout(function(){
+        if(setup.gameId){
+          joinGame(setup.gameId);
+        }
+      },this.retry_backoff);
+      this.retry_backoff*1.2;
+    }
+  }
   socket.on('connect', function(){
     socket.emit('user', name_res);
     joinRetryBackoff = 1000;
