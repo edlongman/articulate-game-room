@@ -126,7 +126,7 @@ function connect(socket_io){
         next();
       });*/
     }
-    socket.on('user', function(name){
+    socket.once('user', function(name){
       socket.emit('feed', {text: "User socket connected"});
       name = String(name);
       socket.on('join', function(gameId, respondId){
@@ -135,13 +135,13 @@ function connect(socket_io){
           socket.emit('kick', {text: "Could not join. Game unknown"});
           return;
         }
+        respondId(game.id.toUpperCase()); //Must be before zone are send by user class
         if(!game.addPlayer(name, socket)){
           socket.emit('kick', {text: "Could not join. User occupied"});
         }
-        respondId(game.id.toUpperCase());
       });
     });
-    socket.on('admin', function(){
+    socket.once('admin', function(){
       socket.emit('feed', {text: "Admin socket connected"});
       socket.on('join', function(gameId, respondId){
         if(typeof(respondId)!="function"){
@@ -156,6 +156,7 @@ function connect(socket_io){
           socket.emit('kick', {text: "Could not join. Game unknown"});
           return;
         }
+        respondId(gameId.toUpperCase()); //Must be before zone are send by user class
         if(!game.connectAdmin(socket)){
           socket.emit('kick', {text: "Could not join. Admin occupied"});
           return;
@@ -163,7 +164,6 @@ function connect(socket_io){
         game.on('regenerate', function(info){ //TODO: move to ChameleonGame
           game.feed.emit('log', {text: 'Generator updated: ' + info});
         });
-        respondId(gameId.toUpperCase());
       });
     });
 

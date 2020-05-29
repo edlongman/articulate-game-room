@@ -26,6 +26,9 @@ button, input, .card{
 .card img{
   max-width: 100%;
   max-height: 100%;
+}
+body.gscrollbar-fixer{
+  margin:40px auto;
 }</style>
 <script src="/socket.io/socket.io.js"></script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/glightbox/dist/css/glightbox.min.css">
@@ -42,7 +45,7 @@ Chameleon admin. <span id="gameId"></span>
   <input type="submit" name="submit" value="Upload">
 </form>
 <div id="actions"></div>
-<div class="zones"></div>
+<div id="zones"></div>
 <div id="hand" class="flex_cards"></div>
 <div id="feed"></div>
 <div id="cards"></div>
@@ -61,11 +64,10 @@ Chameleon admin. <span id="gameId"></span>
 <script src="{{ mountpath }}/clientZone.js"></script>
 <script type="text/javascript">
   'use strict';
-  var socket = io(setup.base);
+  var socket = io(setup.base, {timeout: 10000, autoConnect: false});
   var feed_div = document.getElementById("feed");
   var cards_div = document.getElementById("cards");
   var players_div = document.getElementById("players");
-  socket.emit('admin', 'admin');
   function joinGame(id){
     socket.emit('join', id || null, function(gameId){
       const game_id = document.getElementById("gameId");
@@ -73,12 +75,23 @@ Chameleon admin. <span id="gameId"></span>
       game_link.setAttribute('href', setup.base + '/play/' + gameId);
       game_link.setAttribute('target', '_blank');
       game_link.textContent = 'Share ID: ' + gameId;
+      game_id.clearChildren();
       game_id.appendChild(game_link);
       setup.gameId = gameId;
       window.history.pushState(setup, "Game " + gameId, setup.base + "/admin/" + gameId);
+      document.getElementById('actions').clearChildren();
+      document.getElementById('zones').clearChildren();
+      zones = [];
+      clearTimeout(joinRetryTimer);
     });
   }
-  joinGame(setup.gameId);
+  socket.on('connect', function(){
+    socket.emit('admin', 'admin');
+    joinRetryBackoff = 1000;
+    if(setup.gameId){
+      joinGame(setup.gameId);
+    }
+  });
   socket.on('feed', function (data) {
     console.log(data);
     var div = document.createElement('div');
@@ -86,12 +99,22 @@ Chameleon admin. <span id="gameId"></span>
     div.setAttribute('class', 'note');
     feed_div.appendChild(div);
   });
+  var joinRetryBackoff = 1000;
+  var joinRetryMax = 20000;
+  var joinRetryTimer = null;
   socket.on('kick', function (data) {
     console.log(data);
     var div = document.createElement('div');
-    div.textContent = data.text;
+    div.textContent = data.text + " Retrying in: " + (joinRetryBackoff/1000).toFixed(1); + "s";
     div.setAttribute('class', 'note warn');
     feed_div.appendChild(div);
+    clearTimeout(joinRetryTimer);
+    joinRetryTimer = setTimeout(function(){
+      if(setup.gameId){
+        joinGame(setup.gameId);
+      }
+    },joinRetryBackoff);
+    joinRetryBackoff = Math.min(joinRetryBackoff*1.2, joinRetryMax).toFixed(2);
   });
   socket.on('players', function(players_string){
     players_div.textContent = players_string;
@@ -107,7 +130,7 @@ Chameleon admin. <span id="gameId"></span>
   var zones = [];
   socket.on('zone_new', function(zone_info){
     const new_zone = new Zone(zone_info);
-    document.querySelector('.zones').appendChild(new_zone.dom);
+    document.getElementById('zones').appendChild(new_zone.dom);
 
     zones.push(new_zone);
 
@@ -126,6 +149,7 @@ Chameleon admin. <span id="gameId"></span>
     }
     zones[zone_idx].remove(card_info)
   });
+  socket.open();
   document.querySelector('form.card-upload').addEventListener('submit',
     function sendUpload(ev){
       ev.preventDefault();
