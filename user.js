@@ -2,7 +2,7 @@
 const EventEmitter = require('events');
 const Zone = require('./zone');
 const Collection = require('./collection');
-const USER_TIMEOUT = 10000;//ms
+const USER_TIMEOUT = 25000;//ms
 
 class User extends EventEmitter{
   name;

@@ -5,7 +5,7 @@ const config = require('./config');
 const stoppable = require('stoppable');
 const graceful_limit = 20000; // 20s to do gracefully shutdown
 var server = stoppable(require('http').Server(express), graceful_limit);
-var io = require('socket.io')(server);
+var io = require('socket.io')(server, {pingInterval: 5000, pingTimeout: 5000});
 
 server.listen(config.port, () => console.log("server listening on "+config.port));
 // WARNING: app.listen(80) will NOT work here!

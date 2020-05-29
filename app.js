@@ -100,7 +100,33 @@ var io = null; //Gets overwritten later copy-listeners may be useful
 function connect(socket_io){
   io = socket_io;
   io.on('connection', function (socket) {
-    socket.on('user', function(name){
+
+    if(!process.env.NODE_ENV){
+      const sockShortId = socket.id.substring(0,5);
+      console.log(`Sock ${sockShortId}: connected`);
+      // Not production so do verbose socket log
+      socket.conn.on("packet",function(packet){
+        if(packet.type !="message"){
+          console.log(`Sock ${sockShortId}: Packet recevied: ${packet.type}`);
+          return;
+        }
+        const args = JSON.parse(
+          packet.data.substring(packet.data.indexOf('['))
+        );
+        const evArgs = JSON.stringify(args.splice(1));
+        const evStr = `${args[0]}(${evArgs})`;
+        console.log(`Sock ${sockShortId}: Event: ${evStr}`);
+        return true;
+      })/*
+      socket.use(function(data,next,test){
+        // Build debug string
+        const evArgs = JSON.stringify(data.splice(1));
+        const evStr = `${data[0]}(${evArgs})`;
+        console.log(`Sock ${sockShortId}: Event: ${evStr}`);
+        next();
+      });*/
+    }
+    socket.once('user', function(name){
       socket.emit('feed', {text: "User socket connected"});
       name = String(name);
       socket.on('join', function(gameId, respondId){
@@ -109,15 +135,19 @@ function connect(socket_io){
           socket.emit('kick', {text: "Could not join. Game unknown"});
           return;
         }
+        respondId(game.id.toUpperCase()); //Must be before zone are send by user class
         if(!game.addPlayer(name, socket)){
           socket.emit('kick', {text: "Could not join. User occupied"});
         }
-        respondId(game.id.toUpperCase());
       });
     });
-    socket.on('admin', function(){
+    socket.once('admin', function(){
       socket.emit('feed', {text: "Admin socket connected"});
       socket.on('join', function(gameId, respondId){
+        if(typeof(respondId)!="function"){
+          socket.emit('kick', {text: "Could not join. No response callback"});
+          return;
+        }
         if(gameId == null){
           gameId = manager.newGame();
         }
@@ -126,6 +156,7 @@ function connect(socket_io){
           socket.emit('kick', {text: "Could not join. Game unknown"});
           return;
         }
+        respondId(gameId.toUpperCase()); //Must be before zone are send by user class
         if(!game.connectAdmin(socket)){
           socket.emit('kick', {text: "Could not join. Admin occupied"});
           return;
@@ -133,7 +164,6 @@ function connect(socket_io){
         game.on('regenerate', function(info){ //TODO: move to ChameleonGame
           game.feed.emit('log', {text: 'Generator updated: ' + info});
         });
-        respondId(gameId.toUpperCase());
       });
     });
 
