@@ -21,7 +21,7 @@
     "jpeg-autorotate": "^8.0.1",
     "multer": "^1.4.5-lts.1",
     "nunjucks": "^3.2.1",
-    "socket.io": "^3.0.4",
+    "socket.io": "^4.6.1",
     "stoppable": "^1.1.0"
   }
 }
